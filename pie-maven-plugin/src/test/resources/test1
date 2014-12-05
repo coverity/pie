@@ -1,0 +1,2 @@
+0	file:/var/lib/tomcat/webapps/foo/lib/-	com.example.Bar	java.io.FilePermission	/var/tmp/foobar	read
+0	file:/var/lib/tomcat/webapps/foo/lib/-	com.example.Bar	java.io.FilePermission	/var/tmp/foobar	write
