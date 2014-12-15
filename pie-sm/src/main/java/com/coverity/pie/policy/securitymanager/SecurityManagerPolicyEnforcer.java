@@ -4,21 +4,34 @@ import java.security.Policy;
 
 import javax.servlet.ServletContext;
 
-import com.coverity.pie.core.AbstractPolicyEnforcer;
-import com.coverity.pie.core.PolicyBuilder;
-import com.coverity.pie.policy.securitymanager.SecurityManagerPolicyBuilder;
+import com.coverity.pie.core.PieConfig;
+import com.coverity.pie.core.PolicyConfig;
+import com.coverity.pie.core.PolicyEnforcer;
 
-public class SecurityManagerPolicyEnforcer extends AbstractPolicyEnforcer {
+public class SecurityManagerPolicyEnforcer implements PolicyEnforcer {
     
     private static final Object MUTEX = new Object();
     private static int startupCount = 0;
 
-    private final SecurityManagerPolicyBuilder policyBuilder = new SecurityManagerPolicyBuilder();
+    private SecurityManagerPolicy policy;
+    private PolicyConfig policyConfig;
     private DynamicJavaPolicy dynamicJavaPolicy;
     
+
     @Override
-    protected PolicyBuilder getPolicyBuilder() {
-        return policyBuilder;
+    public void init(PieConfig pieConfig) {
+        this.policy = new SecurityManagerPolicy();
+        this.policyConfig = new PolicyConfig(policy.getName(), pieConfig);
+    }
+    
+    @Override
+    public PolicyConfig getPolicyConfig() {
+        return policyConfig;
+    }
+    
+    @Override
+    public com.coverity.pie.core.Policy getPolicy() {
+        return policy;
     }
     
     @Override
@@ -30,14 +43,14 @@ public class SecurityManagerPolicyEnforcer extends AbstractPolicyEnforcer {
                 return;
             }
             
-            Policy policy = Policy.getPolicy();
-            if (policy != null && policy.getClass().getName().equals(DynamicJavaPolicy.class.getName())) {
+            Policy parentPolicy = Policy.getPolicy();
+            if (parentPolicy != null && parentPolicy.getClass().getName().equals(DynamicJavaPolicy.class.getName())) {
                 // Must have been started up in some other classloader
-                throw new IllegalStateException("Having multiple PIE jars in a single container is unsupported.");
+                throw new IllegalStateException("Having multiple PIE jars in a single container is unsupported. Move PIE from your application WARs to your container's common lib directory.");
             }
             startupCount += 1;
             
-            dynamicJavaPolicy = new DynamicJavaPolicy(policy, policyBuilder);
+            dynamicJavaPolicy = new DynamicJavaPolicy(parentPolicy, policy, policyConfig);
             dynamicJavaPolicy.refresh();
             Policy.setPolicy(dynamicJavaPolicy);
             if (System.getSecurityManager() == null) {
@@ -51,11 +64,6 @@ public class SecurityManagerPolicyEnforcer extends AbstractPolicyEnforcer {
         synchronized(MUTEX) {
             startupCount -= 1;
         }
-    }
-
-    @Override
-    public void refreshPolicy() {
-        dynamicJavaPolicy.refresh();
     }
 
 }

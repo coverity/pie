@@ -33,7 +33,20 @@ public class PieAdminFilter implements Filter {
                 PolicyEnforcer policyEnforcer = pieInitializer.getPolicyEnforcer(httpServletRequest.getParameter("policyEnforcer"));
                 if (policyEnforcer != null) {
                     PrintWriter writer = response.getWriter();
-                    writer.write(policyEnforcer.getPolicyViolations());
+                    
+                    for (String[] violation : policyEnforcer.getPolicy().getViolations()) {
+                        if (violation.length > 0) {
+                            writer.write(violation[0]);
+                        }
+                        for (int i = 1; i < violation.length; i++) {
+                            writer.write("\t");
+                            if (violation[i] != null) {
+                                writer.write(violation[i]);
+                            }
+                        }
+                        writer.write("\n");
+                    }
+                    
                     writer.close();
                     return;
                 }

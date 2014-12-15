@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class AbstractPathCollapser<T> {
+public abstract class AbstractPathCollapser {
     protected final static class PathName {
         private final String[] pathComponents;
         private final String[] nonPathComponents;
@@ -29,11 +29,13 @@ public abstract class AbstractPathCollapser<T> {
     private final String fileStar;
     private final String dirStar;
     private final int collapseThreshold;
+    private final int minDepth;
     
-    protected AbstractPathCollapser(String fileStar, String dirStar, int collapseThreshold) {
+    protected AbstractPathCollapser(String fileStar, String dirStar, int collapseThreshold, int minDepth) {
         this.fileStar = fileStar;
         this.dirStar = dirStar;
         this.collapseThreshold = collapseThreshold;
+        this.minDepth = minDepth;
     }
     
     private static boolean nullEquals(String a, String b) {
@@ -60,7 +62,7 @@ public abstract class AbstractPathCollapser<T> {
         return true;
     }
     
-    protected final Map<PathName, Collection<T>> collapsePaths(Map<PathName, Collection<T>> paths) {
+    protected final <T> Map<PathName, Collection<T>> collapsePaths(Map<PathName, Collection<T>> paths) {
         
         boolean anyCollapsed = true;
         while (anyCollapsed) {
@@ -69,6 +71,11 @@ public abstract class AbstractPathCollapser<T> {
             List<PathName> newPaths = new ArrayList<PathName>();
             for (Map.Entry<PathName, Collection<T>> pathNameA : paths.entrySet()) {
                 String[] a = pathNameA.getKey().getPathComponents();
+                
+                // Do not collapse anything already at minDepth or which would collapse to below minDepth
+                if (a.length <= minDepth || (a.length == minDepth+1 && (a[a.length-1].equals(fileStar) || a[a.length-1].equals(dirStar)))) {
+                    continue;
+                }
                 
                 int numMatches = 0;
                 for (Map.Entry<PathName, Collection<T>> pathNameB : paths.entrySet()) {

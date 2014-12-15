@@ -16,17 +16,19 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.util.IOUtil;
 
 public class CspEnforcementFilter implements Filter {
 
     private static final String REPORT_URI = "/a379568856ef23aPIE19bc95ce4e2f7fd2b";
     
-    private final CspPolicyBuilder policyBuilder;
-    private CspPolicy policy;
+    private final CspRealPolicy policy;
+    private final PolicyConfig policyConfig;
     
-    public CspEnforcementFilter(CspPolicyBuilder policyBuilder) {
-        this.policyBuilder = policyBuilder;
+    public CspEnforcementFilter(CspRealPolicy policy, PolicyConfig policyConfig) {
+        this.policy = policy;
+        this.policyConfig = policyConfig;
     }
     
     @Override
@@ -47,6 +49,7 @@ public class CspEnforcementFilter implements Filter {
                 String violatedDirectiveName = json.getString("violated-directive").split(" ")[0];
                 URI documentUri = new URI(json.getString("document-uri"));
                 String blocked = json.getString("blocked-uri");
+                
                 // Firefox seems to report 'unsafe-inline' as self (no quotes) 
                 if (blocked.equals("self") &&
                         (violatedDirectiveName.equals("script-src")
@@ -59,11 +62,7 @@ public class CspEnforcementFilter implements Filter {
                     }
                 }
                 
-                policyBuilder.registerPolicyViolation(new CspViolation(
-                        documentUri.getPath(),
-                        blocked,
-                        violatedDirectiveName
-                        ));
+                policy.logViolation(documentUri, violatedDirectiveName, blocked);
             } catch (JSONException | URISyntaxException e) {
                 throw new IllegalArgumentException("Invalid request", e);
             }
@@ -75,7 +74,7 @@ public class CspEnforcementFilter implements Filter {
             String policyStr = policy.getPolicyForUri(httpServletRequest.getRequestURI());
             policyStr += "; report-uri " + REPORT_URI;
             
-            if (policyBuilder.getConfig().isReportOnlyMode()) {
+            if (policyConfig.isReportOnlyMode()) {
                 httpServletResponse.addHeader("Content-Security-Policy-Report-Only", policyStr);
             } else {
                 httpServletResponse.addHeader("Content-Security-Policy", policyStr);
@@ -91,14 +90,6 @@ public class CspEnforcementFilter implements Filter {
 
     @Override
     public void destroy() {
-    }
-
-    public void refreshPolicy() {
-        try {
-            policy = policyBuilder.getPolicy();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
     
     private static String getHostPart(URI uri) {

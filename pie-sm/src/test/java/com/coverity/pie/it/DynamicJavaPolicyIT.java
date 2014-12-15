@@ -1,6 +1,5 @@
 package com.coverity.pie.it;
 
-import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -17,10 +16,10 @@ import java.security.Permission;
 
 import org.testng.annotations.Test;
 
+import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.policy.securitymanager.DynamicJavaPolicy;
 import com.coverity.pie.policy.securitymanager.PolicyFileUtil;
-import com.coverity.pie.policy.securitymanager.SecurityManagerConfig;
-import com.coverity.pie.policy.securitymanager.SecurityManagerPolicyBuilder;
+import com.coverity.pie.policy.securitymanager.SecurityManagerPolicy;
 
 
 public class DynamicJavaPolicyIT {
@@ -35,20 +34,19 @@ public class DynamicJavaPolicyIT {
         // Setup stubs
         final Permission permission = new java.io.FilePermission("/foo", "read");
                 
-        SecurityManagerConfig securityManagerConfig = createMock(SecurityManagerConfig.class);
-        expect(securityManagerConfig.getPolicyPath()).andStubReturn(null);
-        expect(securityManagerConfig.isReportOnlyMode()).andStubReturn(false);
+        PolicyConfig policyConfig = createMock(PolicyConfig.class);
+        expect(policyConfig.isReportOnlyMode()).andStubReturn(false);
         
-        SecurityManagerPolicyBuilder policyBuilder = createMock(SecurityManagerPolicyBuilder.class);
-        expect(policyBuilder.getConfig()).andStubReturn(securityManagerConfig);
-        policyBuilder.registerPolicyViolation(anyObject(StackTraceElement[].class), eq(this.getClass().getProtectionDomain().getCodeSource().getLocation()), same(permission));
+        SecurityManagerPolicy policy = createMock(SecurityManagerPolicy.class);
+        expect(policy.implies(eq(this.getClass().getProtectionDomain().getCodeSource()), same(permission))).andStubReturn(false);
+        policy.logViolation(eq(this.getClass().getProtectionDomain().getCodeSource()), same(permission));
         expectLastCall();
-        replay(policyBuilder, securityManagerConfig);
+        replay(policy, policyConfig);
         
         // Test
-        DynamicJavaPolicy dynamicJavaPolicy = new DynamicJavaPolicy(null, policyBuilder);
+        DynamicJavaPolicy dynamicJavaPolicy = new DynamicJavaPolicy(null, policy, policyConfig);
         assertFalse(dynamicJavaPolicy.implies(this.getClass().getProtectionDomain(), permission));
         assertTrue(dynamicJavaPolicy.implies(PolicyFileUtil.class.getProtectionDomain(), permission));        
-        verify(policyBuilder, securityManagerConfig);
+        verify(policy, policyConfig);
     }
 }

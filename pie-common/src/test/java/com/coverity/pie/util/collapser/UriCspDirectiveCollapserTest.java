@@ -67,6 +67,42 @@ public class UriCspDirectiveCollapserTest {
                 },
             });
     }
+    
+    @Test
+    public void testDoNotCollapseToRoot() {
+        final UriCspDirectiveCollapser collapser = new UriCspDirectiveCollapser(2);
+        
+        List<CspPolicyEntry> output = new ArrayList<CspPolicyEntry>(collapser.collapse(buildCspPolicy(
+                new Object[] {
+                        new Object[] {
+                            "/**", new Object[] {
+                                    new Object[] { "script-src", new String[] { "'self'", } },
+                                    new Object[] { "style-src", new String[] { "'self'", } },
+                            }
+                        }, new Object[] {
+                            "/a/a", new Object[] {
+                                    new Object[] { "script-src", new String[] { "1.com", } },
+                            }
+                        }, new Object[] {
+                            "/a/b", new Object[] {
+                                    new Object[] { "script-src", new String[] { "2.com", } },
+                            }
+                        },
+                })));
+                
+        Assert.assertEquals(toArray(output), new Object[] {
+                new Object[] {
+                    "/**", new Object[] {
+                            new Object[] { "script-src", new String[] { "'self'", } },
+                            new Object[] { "style-src", new String[] { "'self'", } },
+                    }
+                }, new Object[] {
+                    "/a/*", new Object[] {
+                            new Object[] { "script-src", new String[] { "1.com", "2.com", } },
+                    }
+                },
+            });
+    }
 
     private static List<CspPolicyEntry> buildCspPolicy(Object[] definition) {
         List<CspPolicyEntry> entries = new ArrayList<CspPolicyEntry>(definition.length);

@@ -1,5 +1,11 @@
 package com.coverity.pie.core;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +20,7 @@ import javax.servlet.ServletContextListener;
 
 import com.coverity.pie.policy.csp.CspPolicyEnforcer;
 import com.coverity.pie.policy.securitymanager.SecurityManagerPolicyEnforcer;
+import com.coverity.pie.util.IOUtil;
 
 public class PieInitializer implements ServletContainerInitializer, ServletContextListener {
     
@@ -44,8 +51,19 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
             }
             policyEnforcer.init(pieConfig);
             
-            if (policyEnforcer.isEnabled()) {
-                policyEnforcers.put(policyEnforcer.getName(), policyEnforcer);
+            if (policyEnforcer.getPolicyConfig().isEnabled()) {
+                
+                InputStream is = null;
+                try {
+                    is = policyEnforcer.getPolicyConfig().getPolicyFile().openStream();
+                    policyEnforcer.getPolicy().parsePolicy(new InputStreamReader(is));
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                } finally {
+                    IOUtil.closeSilently(is);
+                }
+                
+                policyEnforcers.put(policyEnforcer.getPolicy().getName(), policyEnforcer);
                 policyEnforcer.applyPolicy(cx);
             }
         }
@@ -84,7 +102,7 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
         
         for (PolicyEnforcer policyEnforcer : policyEnforcers.values()) {
             if (pieConfig.isRegenerateOnShutdown()) {
-                policyEnforcer.savePolicy();
+                savePolicy(policyEnforcer);
             }
             policyEnforcer.shutdown();
         }
@@ -94,6 +112,21 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
         return policyEnforcers.get(name);
     }
     
+    private static void savePolicy(PolicyEnforcer policyEnforcer) {
+        policyEnforcer.getPolicy().addViolationsToPolicy();
+        policyEnforcer.getPolicy().collapsePolicy();
+        
+        OutputStream os = null;
+        try {
+            os = new FileOutputStream(policyEnforcer.getPolicyConfig().getPolicyFile().toString());
+            policyEnforcer.getPolicy().writePolicy(new OutputStreamWriter(os));
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            IOUtil.closeSilently(os);
+        }
+    }
+    
     private class PolicyGeneratorRunnable implements Runnable {
         private boolean shuttingDown = false;
         
@@ -101,7 +134,7 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
         public void run() {
             while (!shuttingDown) {
                 for (PolicyEnforcer policyEnforcer : policyEnforcers.values()) {
-                    policyEnforcer.savePolicy();
+                    savePolicy(policyEnforcer);
                 }
                 try {
                     Thread.sleep(30000L);

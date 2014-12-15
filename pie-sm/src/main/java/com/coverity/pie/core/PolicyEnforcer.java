@@ -12,7 +12,12 @@ import javax.servlet.ServletContext;
  * @seealso AbstractPolicyEnforcer
  * 
  */
-public interface PolicyEnforcer extends PolicyBuilder {
+public interface PolicyEnforcer {
+    
+    public Policy getPolicy();
+    public PolicyConfig getPolicyConfig();
+    
+    public void init(PieConfig pieConfig);
     
     /**
      * Apply the policy to the servlet context being initialized. This enforcer should configure
@@ -28,10 +33,5 @@ public interface PolicyEnforcer extends PolicyBuilder {
      * should do any cleanup it needs.
      */
     public void shutdown();
-    
-    /**
-     * The enforcer should re-read its policy, updating its enforcement to reflect any changes.
-     */
-    public void refreshPolicy();
     
 }
