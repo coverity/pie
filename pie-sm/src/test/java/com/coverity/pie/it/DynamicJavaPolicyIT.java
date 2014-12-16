@@ -16,9 +16,9 @@ import java.security.Permission;
 
 import org.testng.annotations.Test;
 
+import com.coverity.pie.core.Policy;
 import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.policy.securitymanager.DynamicJavaPolicy;
-import com.coverity.pie.policy.securitymanager.PolicyFileUtil;
 import com.coverity.pie.policy.securitymanager.SecurityManagerPolicy;
 
 
@@ -28,8 +28,8 @@ public class DynamicJavaPolicyIT {
         
         // Sanity check certificates
         assertNull(this.getClass().getProtectionDomain().getCodeSource().getCertificates());
-        assertNotNull(PolicyFileUtil.class.getProtectionDomain().getCodeSource().getCertificates());
-        assertTrue(PolicyFileUtil.class.getProtectionDomain().getCodeSource().getCertificates().length > 0);
+        assertNotNull(Policy.class.getProtectionDomain().getCodeSource().getCertificates());
+        assertTrue(Policy.class.getProtectionDomain().getCodeSource().getCertificates().length > 0);
         
         // Setup stubs
         final Permission permission = new java.io.FilePermission("/foo", "read");
@@ -46,7 +46,7 @@ public class DynamicJavaPolicyIT {
         // Test
         DynamicJavaPolicy dynamicJavaPolicy = new DynamicJavaPolicy(null, policy, policyConfig);
         assertFalse(dynamicJavaPolicy.implies(this.getClass().getProtectionDomain(), permission));
-        assertTrue(dynamicJavaPolicy.implies(PolicyFileUtil.class.getProtectionDomain(), permission));        
+        assertTrue(dynamicJavaPolicy.implies(Policy.class.getProtectionDomain(), permission));        
         verify(policy, policyConfig);
     }
 }

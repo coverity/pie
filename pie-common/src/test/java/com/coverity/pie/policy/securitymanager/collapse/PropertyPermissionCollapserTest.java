@@ -6,16 +6,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.testng.annotations.Test;
 
-public class PropertyPermissionCollapserTest {
+import com.coverity.pie.util.collapser.PropertyCollapser;
 
-    @Test
-    public void testSupportedPermisisons() {
-        assertEquals(new PropertyPermissionCollapser().supportedPermissions(), Arrays.asList("java.util.PropertyPermission"));
-    }
+public class PropertyPermissionCollapserTest {
     
     @Test
     public void testPropertyPermissionCollapser() {
@@ -33,7 +32,7 @@ public class PropertyPermissionCollapserTest {
                 "e.f.h.h",
                 "e.f.h.i");
         
-        props = new ArrayList<String>(new PropertyPermissionCollapser().collapse(props));
+        props = new ArrayList<String>(new PropertyCollapser(2).collapse(nullMap(props)).keySet());
         Collections.sort(props);
         
         assertEquals(props, Arrays.asList(
@@ -47,27 +46,35 @@ public class PropertyPermissionCollapserTest {
     
     @Test
     public void testCollapseToRoot() {
-        Collection<String> props = new PropertyPermissionCollapser().collapse(Arrays.asList(
+        Collection<String> props = new PropertyCollapser(2).collapse(nullMap(Arrays.asList(
                 "a.b",
                 "a.c",
                 "b.b",
-                "b.c"));
+                "b.c"))).keySet();
         assertEquals(props, Arrays.asList("*"));
         
-        props = new PropertyPermissionCollapser().collapse(Arrays.asList(
+        props = new PropertyCollapser(0).collapse(nullMap(Arrays.asList(
                 "a.b",
-                "*"));
+                "*"))).keySet();
         assertEquals(props, Arrays.asList("*"));
         
-        props = new PropertyPermissionCollapser().collapse(Arrays.asList(
+        props = new PropertyCollapser(0).collapse(nullMap(Arrays.asList(
                 "*",
-                "a.b"));
+                "a.b"))).keySet();
         assertEquals(props, Arrays.asList("*"));
         
-        props = new PropertyPermissionCollapser().collapse(Arrays.asList(
+        props = new PropertyCollapser(0).collapse(nullMap(Arrays.asList(
                 "*",
-                "*"));
+                "*"))).keySet();
         assertEquals(props, Arrays.asList("*"));
+    }
+    
+    private static Map<String, Collection<Void>> nullMap(Collection<String> keys) {
+        Map<String, Collection<Void>> result = new HashMap<>(keys.size());
+        for (String key : keys) {
+            result.put(key, null);
+        }
+        return result;
     }
     
 }

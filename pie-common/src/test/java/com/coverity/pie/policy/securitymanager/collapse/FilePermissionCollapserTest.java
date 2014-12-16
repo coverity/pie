@@ -6,16 +6,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.testng.annotations.Test;
 
-public class FilePermissionCollapserTest {
+import com.coverity.pie.util.collapser.FilePathCollapser;
 
-    @Test
-    public void testSupportedPermisisons() {
-        assertEquals(new FilePermissionCollapser().supportedPermissions(), Arrays.asList("java.io.FilePermission"));
-    }
+public class FilePermissionCollapserTest {
     
     @Test
     public void testFilePermissionCollapser() {
@@ -33,7 +32,7 @@ public class FilePermissionCollapserTest {
                 "/e/f/h/h",
                 "/e/f/h/i");
         
-        paths = new ArrayList<String>(new FilePermissionCollapser().collapse(paths));
+        paths = new ArrayList<String>(new FilePathCollapser(2).collapse(nullMap(paths)).keySet());
         Collections.sort(paths);
         
         assertEquals(paths, Arrays.asList(
@@ -47,27 +46,35 @@ public class FilePermissionCollapserTest {
     
     @Test
     public void testCollapseToRoot() {
-        Collection<String> props = new FilePermissionCollapser().collapse(Arrays.asList(
+        Collection<String> props = new FilePathCollapser(2).collapse(nullMap(Arrays.asList(
                 "/a/b",
                 "/a/c",
                 "/b/b",
-                "/b/c"));
+                "/b/c"))).keySet();
         assertEquals(props, Arrays.asList("/-"));
         
-        props = new FilePermissionCollapser().collapse(Arrays.asList(
+        props = new FilePathCollapser(0).collapse(nullMap(Arrays.asList(
                 "/a/b",
-                "/-"));
+                "/-"))).keySet();
         assertEquals(props, Arrays.asList("/-"));
         
-        props = new FilePermissionCollapser().collapse(Arrays.asList(
+        props = new FilePathCollapser(0).collapse(nullMap(Arrays.asList(
                 "/-",
-                "/a/b"));
+                "/a/b"))).keySet();
         assertEquals(props, Arrays.asList("/-"));
         
-        props = new FilePermissionCollapser().collapse(Arrays.asList(
+        props = new FilePathCollapser(0).collapse(nullMap(Arrays.asList(
                 "/-",
-                "/-"));
+                "/-"))).keySet();
         assertEquals(props, Arrays.asList("/-"));
+    }
+    
+    private static Map<String, Collection<Void>> nullMap(Collection<String> keys) {
+        Map<String, Collection<Void>> result = new HashMap<>(keys.size());
+        for (String key : keys) {
+            result.put(key, null);
+        }
+        return result;
     }
     
 }

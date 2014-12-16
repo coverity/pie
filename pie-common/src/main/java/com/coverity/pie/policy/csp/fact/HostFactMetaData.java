@@ -2,6 +2,7 @@ package com.coverity.pie.policy.csp.fact;
 
 import com.coverity.pie.core.FactMetaData;
 import com.coverity.pie.core.StringCollapser;
+import com.coverity.pie.core.UnsupportedFactMetaData;
 import com.coverity.pie.util.collapser.HostnameCollapser;
 
 public class HostFactMetaData implements FactMetaData {
@@ -15,7 +16,7 @@ public class HostFactMetaData implements FactMetaData {
         return instance;
     }
     
-    private final HostnameCollapser hostnameCollapser = new HostnameCollapser(0);
+    private final HostnameCollapser hostnameCollapser = new HostnameCollapser(2);
     
     @Override
     public StringCollapser getCollapser() {
@@ -29,7 +30,7 @@ public class HostFactMetaData implements FactMetaData {
 
     @Override
     public FactMetaData getChildFactMetaData(String fact) {
-        throw new UnsupportedOperationException("Host facts cannot have children.");
+        return UnsupportedFactMetaData.getInstance();
     }
 
 }

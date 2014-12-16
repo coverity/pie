@@ -4,6 +4,7 @@ import com.coverity.pie.core.EqualityStringMatcher;
 import com.coverity.pie.core.FactMetaData;
 import com.coverity.pie.core.NullStringCollapser;
 import com.coverity.pie.core.StringCollapser;
+import com.coverity.pie.core.UnsupportedFactMetaData;
 
 public class PermissionActionFactMetaData implements FactMetaData {
 
@@ -28,7 +29,7 @@ public class PermissionActionFactMetaData implements FactMetaData {
 
     @Override
     public FactMetaData getChildFactMetaData(String fact) {
-        throw new UnsupportedOperationException("No generic child facts of permission actions.");
+        return UnsupportedFactMetaData.getInstance();
     }
 
 }

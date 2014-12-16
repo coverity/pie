@@ -15,7 +15,7 @@ public class FileNameFactMetaData implements FactMetaData {
         return instance;
     }
     
-    private final FilePathCollapser filePathCollapser = new FilePathCollapser(0);
+    private final FilePathCollapser filePathCollapser = new FilePathCollapser(2);
     
     @Override
     public StringCollapser getCollapser() {

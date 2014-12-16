@@ -74,20 +74,8 @@ public class DynamicJavaPolicy extends Policy {
                 return true;
             }
         }
-        if (policy.implies(domain.getCodeSource(), permission)) {
-            return true;
-        }
         
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        String callingClassName = null;
-        for (int i = 2; i < stackTrace.length; i++) {
-            String className = stackTrace[i].getClassName();
-            if (!className.startsWith("java.")
-                    && !className.startsWith("sun.")) {
-                callingClassName = className;
-                break;
-            }
-        }
+        String callingClassName = Thread.currentThread().getStackTrace()[2].getClassName();
         if (callingClassName.startsWith("com.coverity.pie.")) {
             Certificate[] certificates = domain.getCodeSource().getCertificates();
             if (certificates != null && certificates.length > 0) {
@@ -108,6 +96,9 @@ public class DynamicJavaPolicy extends Policy {
             }
         }
         
+        if (policy.implies(domain.getCodeSource(), permission)) {
+            return true;
+        }
         policy.logViolation(domain.getCodeSource(), permission);
         
         if (policyConfig.isReportOnlyMode()) {

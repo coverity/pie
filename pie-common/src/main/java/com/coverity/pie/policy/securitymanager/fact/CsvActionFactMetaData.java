@@ -2,7 +2,8 @@ package com.coverity.pie.policy.securitymanager.fact;
 
 import com.coverity.pie.core.FactMetaData;
 import com.coverity.pie.core.StringCollapser;
-import com.coverity.pie.policy.securitymanager.collapse.CsvActionCollapser;
+import com.coverity.pie.core.UnsupportedFactMetaData;
+import com.coverity.pie.policy.securitymanager.CsvActionCollapser;
 
 public class CsvActionFactMetaData implements FactMetaData {
 
@@ -41,7 +42,7 @@ public class CsvActionFactMetaData implements FactMetaData {
 
     @Override
     public FactMetaData getChildFactMetaData(String fact) {
-        throw new UnsupportedOperationException("Child facts are not supported.");
+        return UnsupportedFactMetaData.getInstance();
     }
 
 }

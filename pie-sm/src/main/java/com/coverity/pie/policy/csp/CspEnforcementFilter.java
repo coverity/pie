@@ -23,10 +23,10 @@ public class CspEnforcementFilter implements Filter {
 
     private static final String REPORT_URI = "/a379568856ef23aPIE19bc95ce4e2f7fd2b";
     
-    private final CspRealPolicy policy;
+    private final CspPolicy policy;
     private final PolicyConfig policyConfig;
     
-    public CspEnforcementFilter(CspRealPolicy policy, PolicyConfig policyConfig) {
+    public CspEnforcementFilter(CspPolicy policy, PolicyConfig policyConfig) {
         this.policy = policy;
         this.policyConfig = policyConfig;
     }

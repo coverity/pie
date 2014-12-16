@@ -25,7 +25,7 @@ public abstract class Policy {
         }
     }
     
-    private FactTreeNode policyRoot = null;
+    private FactTreeNode policyRoot = new FactTreeNode(null);
     private ViolationStore violationStore = new ViolationStore();
     
     public abstract String getName();
@@ -64,6 +64,19 @@ public abstract class Policy {
     
     private static void appendGrants(String[] facts, int factIndex, String[] grantArr,
             FactTreeNode root, FactMetaData rootMetaData, Collection<String[]> grants) {
+        
+        if (root.children.size() == 0) {
+            // Add this grant if all the facts from here are NULL
+            for (int i = factIndex; i < facts.length; i++) {
+                if (facts[i] != null) {
+                    return;
+                }
+                grantArr[i] = null;
+            }
+            grants.add(Arrays.copyOf(grantArr, grantArr.length));
+            return;
+        }
+        
         String fact = facts[factIndex];
         for (FactTreeNode child : root.children) {
             if (fact == null || rootMetaData.matches(child.value, fact)) {
@@ -85,28 +98,32 @@ public abstract class Policy {
         }
         
         for (String[] violation : violations) {
-            FactTreeNode node = policyRoot;
-            FactMetaData metaData = getRootFactMetaData();
+            addGrant(violation);
+        }
+    }
+    
+    protected final void addGrant(String ... facts) {
+        FactTreeNode node = policyRoot;
+        FactMetaData metaData = getRootFactMetaData();
+        
+        for (int i = 0; i < facts.length; i++) {
+            FactTreeNode targetChild = null;
+            FactMetaData targetMetaData = null;
             
-            for (int i = 0; i < violation.length; i++) {
-                FactTreeNode targetChild = null;
-                FactMetaData targetMetaData = null;
-                
-                for (FactTreeNode child : node.children) {
-                    if (metaData.matches(child.value, violation[i])) {
-                        targetChild = child;
-                        targetMetaData = metaData.getChildFactMetaData(child.value);
-                        break;
-                    }
+            for (FactTreeNode child : node.children) {
+                if (metaData.matches(child.value, facts[i])) {
+                    targetChild = child;
+                    targetMetaData = metaData.getChildFactMetaData(child.value);
+                    break;
                 }
-                if (targetChild == null) {
-                    targetChild = new FactTreeNode(violation[i]);
-                    targetMetaData = metaData.getChildFactMetaData(violation[i]);
-                    node.children.add(targetChild);
-                }
-                node = targetChild;
-                metaData = targetMetaData;
             }
+            if (targetChild == null) {
+                targetChild = new FactTreeNode(facts[i]);
+                targetMetaData = metaData.getChildFactMetaData(facts[i]);
+                node.children.add(targetChild);
+            }
+            node = targetChild;
+            metaData = targetMetaData;
         }
     }
     
@@ -116,9 +133,17 @@ public abstract class Policy {
     }
     
     private FactTreeNode collapseFactTreeNode(String rootValue, Collection<FactTreeNode> children, FactMetaData factMetaData) {
+        if (children.size() == 0) {
+            return new FactTreeNode(rootValue);
+        }
+        
         Map<String, Collection<FactTreeNode>> childMap = new HashMap<String, Collection<FactTreeNode>>(children.size());
         for (FactTreeNode child : children) {
-            childMap.put(child.value, child.children);
+            if (!childMap.containsKey(child.value)) {
+                childMap.put(child.value, new ArrayList<FactTreeNode>(child.children));
+            } else {
+                childMap.get(child.value).addAll(child.children);
+            }
         }
         childMap = factMetaData.getCollapser().collapse(childMap);
         
@@ -136,7 +161,8 @@ public abstract class Policy {
     }
     private static FactTreeNode asFactTreeNode(String value, JSONObject jsonObject) {
         FactTreeNode node = new FactTreeNode(value);
-        for (String key : jsonObject.keySet()) {
+        for (Object keyObj : jsonObject.keySet()) {
+            final String key = (String)keyObj;
             node.children.add(asFactTreeNode(key, jsonObject.getJSONObject(key)));
         }
         return node;
@@ -153,17 +179,22 @@ public abstract class Policy {
         while (iter.hasNext()) {
             FactTreeNode child = iter.next();
             for (int j = 0; j < indent; j++) {
-                writer.write("    ");
+                writer.write("   ");
             }
             writer.write("\"");
             writer.write(child.value.replaceAll("\\\\", "\\\\").replaceAll("\"", "\\\""));
             writer.write("\": {");
-            if (child.children.size() > 0) {
+            if (child.children.size() == 0) {
+                writer.write ("}");
             } else {
                 writer.write("\n");
                 writePolicy(writer, child, indent+1);
+                for (int j = 0; j < indent; j++) {
+                    writer.write("   ");
+                }
+                writer.write ("}");
             }
-            writer.write ("}");
+            
             if (iter.hasNext()) {
                 writer.write(",");
             }
@@ -178,6 +209,8 @@ public abstract class Policy {
     }
     
     public String[][] getViolations() {
-        return violationStore.getViolations();
+        synchronized (violationStore) {
+            return violationStore.getViolations();
+        }
     }
 }

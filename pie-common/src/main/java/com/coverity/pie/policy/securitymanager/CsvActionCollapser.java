@@ -1,4 +1,4 @@
-package com.coverity.pie.policy.securitymanager.collapse;
+package com.coverity.pie.policy.securitymanager;
 
 import java.util.ArrayList;
 import java.util.Collection;

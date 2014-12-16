@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +17,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
-import com.coverity.pie.policy.securitymanager.PermissionRequest;
 import com.coverity.pie.util.IOUtil;
 import com.coverity.pie.util.StringUtil;
 
@@ -73,12 +71,12 @@ public class TestPieServer extends NanoHTTPD {
             return new Response(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Not found.");
         }
         
-        Collection<PermissionRequest> permissionRequests;
+        String[][] permissionRequests;
         if (clearedViolations.contains(testFile.toString())) {
-            permissionRequests = Collections.emptyList();
+            permissionRequests = new String[0][];
         } else {
             try {
-                permissionRequests = readPermissionRequests(testFileResource);
+                permissionRequests = readViolations(testFileResource);
             } catch (IOException e) {
                 return new Response(Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, e.toString());
             }
@@ -101,43 +99,38 @@ public class TestPieServer extends NanoHTTPD {
         }
         
         StringBuilder response = new StringBuilder();
-        for (PermissionRequest permissionRequest : permissionRequests) {
-            if (startTime != null && startTime > permissionRequest.getRequestTime()) {
+        for (String[] permissionRequest : permissionRequests) {
+            if (startTime != null && startTime > Long.parseLong(permissionRequest[0])) {
                 continue;
             }
-            response.append(permissionRequest.getRequestTime()).append("\t")
-                    .append(permissionRequest.getCodeSource()).append("\t")
-                    .append(permissionRequest.getClassName()).append("\t")
-                    .append(permissionRequest.getPermissionClassName()).append("\t")
-                    .append(permissionRequest.getPermissionName()).append("\t")
-                    .append(permissionRequest.getPermissionAction()).append("\t")
-                    .append("\n");
+            response.append(permissionRequest[1]);
+            for (int i=2; i < permissionRequest.length; i++) {
+                response.append("\t").append(permissionRequest[i]);
+            }
+            response.append("\n");
         }
         
         return new Response(Response.Status.OK, MIME_PLAINTEXT, response.toString());
     }
     
-    private static Collection<PermissionRequest> readPermissionRequests(InputStream is) throws IOException {
+    private static String[][] readViolations(InputStream is) throws IOException {
         InputStreamReader isr = null;
         BufferedReader br = null;
         
-        Collection<PermissionRequest> permissionRequests = new ArrayList<PermissionRequest>();
+        Collection<String[]> permissionRequests = new ArrayList<String[]>();
         try {
             isr = new InputStreamReader(is);
             br = new BufferedReader(isr);
             String line;
             
             while ((line = br.readLine()) != null) {
-                String[] parts = line.split("\t");
-                permissionRequests.add(new PermissionRequest(
-                        Long.parseLong(parts[0]), parts[1], parts[2], parts[3], parts[4], parts[5]
-                        ));
+                permissionRequests.add(line.split("\t"));
             }
         } finally {
             IOUtil.closeSilently(br);
             IOUtil.closeSilently(isr);
             IOUtil.closeSilently(is);
         }
-        return permissionRequests;
+        return permissionRequests.toArray(new String[permissionRequests.size()][]);
     }
 }

@@ -1,10 +1,9 @@
 package com.coverity.pie.policy.securitymanager;
 
-import java.security.Policy;
-
 import javax.servlet.ServletContext;
 
 import com.coverity.pie.core.PieConfig;
+import com.coverity.pie.core.Policy;
 import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.PolicyEnforcer;
 
@@ -30,7 +29,7 @@ public class SecurityManagerPolicyEnforcer implements PolicyEnforcer {
     }
     
     @Override
-    public com.coverity.pie.core.Policy getPolicy() {
+    public Policy getPolicy() {
         return policy;
     }
     
@@ -43,7 +42,7 @@ public class SecurityManagerPolicyEnforcer implements PolicyEnforcer {
                 return;
             }
             
-            Policy parentPolicy = Policy.getPolicy();
+            java.security.Policy parentPolicy = java.security.Policy.getPolicy();
             if (parentPolicy != null && parentPolicy.getClass().getName().equals(DynamicJavaPolicy.class.getName())) {
                 // Must have been started up in some other classloader
                 throw new IllegalStateException("Having multiple PIE jars in a single container is unsupported. Move PIE from your application WARs to your container's common lib directory.");
@@ -52,7 +51,7 @@ public class SecurityManagerPolicyEnforcer implements PolicyEnforcer {
             
             dynamicJavaPolicy = new DynamicJavaPolicy(parentPolicy, policy, policyConfig);
             dynamicJavaPolicy.refresh();
-            Policy.setPolicy(dynamicJavaPolicy);
+            java.security.Policy.setPolicy(dynamicJavaPolicy);
             if (System.getSecurityManager() == null) {
                 System.setSecurityManager(new SecurityManager());
             }

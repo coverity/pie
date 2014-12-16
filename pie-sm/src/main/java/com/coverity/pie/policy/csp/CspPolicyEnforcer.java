@@ -10,13 +10,13 @@ import com.coverity.pie.core.PolicyEnforcer;
 
 public class CspPolicyEnforcer implements PolicyEnforcer {
 
-    private CspRealPolicy policy;
+    private CspPolicy policy;
     private PolicyConfig policyConfig;
     private CspEnforcementFilter cspEnforcementFilter;
     
     @Override
     public void init(PieConfig pieConfig) {
-        policy = new CspRealPolicy();
+        policy = new CspPolicy();
         policyConfig = new PolicyConfig(policy.getName(), pieConfig);
     }
     

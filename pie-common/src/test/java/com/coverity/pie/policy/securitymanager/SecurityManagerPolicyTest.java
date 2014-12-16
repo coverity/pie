@@ -1,45 +1,29 @@
 package com.coverity.pie.policy.securitymanager;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FilePermission;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.Permission;
 
-import org.testng.annotations.BeforeClass;
+import org.json.JSONObject;
 import org.testng.annotations.Test;
 
-import com.coverity.pie.policy.securitymanager.PolicyFileUtil;
-import com.coverity.pie.policy.securitymanager.collapse.Collapser;
-import com.coverity.pie.policy.securitymanager.collapse.FilePermissionCollapser;
-import com.coverity.pie.policy.securitymanager.collapse.PropertyPermissionCollapser;
 import com.coverity.pie.util.IOUtil;
 
-public class PolicyFileUtilTest {
-    
-    private Collection<Collapser> collapsers;
-    
-    @BeforeClass
-    public void setup() {
-        collapsers = Arrays.<Collapser>asList(
-                new FilePermissionCollapser(),
-                new PropertyPermissionCollapser()
-                );
-    }
+public class SecurityManagerPolicyTest {
     
     @Test
-    public void testEmptyPolicy() throws IOException {
-        File file = File.createTempFile("test-policy", null);
-        
-        PolicyFileUtil.buildPolicyFile(file.toURI().toURL(), false, Collections.<PermissionRequest>emptyList(), collapsers);
-        assertEquals(IOUtil.readFile(file), "");
-    }
-    
-    @Test
-    public void testEmptyDatastore() throws IOException {
+    public void testJavaPolicyParser() throws IOException {
         File file = File.createTempFile("test-policy", null);
         
         final String contents =
@@ -56,22 +40,11 @@ public class PolicyFileUtilTest {
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble\", \"read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble/*\", \"read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default\", \"read,write\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/-\", \"read,write\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/2014/11/24/1416865020000.xml\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/files/blog_shellshock.txt\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/images/Image080.jpg\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/indexes/pages.lock\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/indexes/search/*\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/pages/1416865080967.lock\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/theme.bak\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/theme.bak/*\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/theme.bak/images/*\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/theme/aaa\", \"delete\";\n"
+                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/-\", \"delete,read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble/realm/*\", \"read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/temp\", \"read\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/temp/*\", \"delete,write\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/themes/user-default/*\", \"write\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/themes/user-default/aaa\", \"delete\";\n"
+                + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/themes/user-default/*\", \"delete,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/themes/user-default/images/*\", \"write\";\n"
                 + "};\n"
                 + "grant codeBase \"file:/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/WEB-INF/lib/spring-security-core-3.0.3.RELEASE.jar\" {\n"
@@ -94,35 +67,55 @@ public class PolicyFileUtilTest {
                 
         
         IOUtil.writeFile(file, contents);
-        PolicyFileUtil.buildPolicyFile(file.toURI().toURL(), false, Collections.<PermissionRequest>emptyList(), collapsers);
+        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        policy.parseJavaPolicy(new FileReader(file));
+        policy.writeJavaPolicy(new FileWriter(file));
         assertEquals(IOUtil.readFile(file), contents);
     }
     
     @Test
     public void testCollapsePerms() throws IOException {
-        List<PermissionRequest> permissionRequests = Arrays.asList(
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo/bar/baz.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo/bar/bing.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo/blarg.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo2/bar/baz.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo2/bar/blarg.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo2/bar/baz.txt", "write"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo2/bar/blarg.txt", "write"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo4/bar/baz.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo4/bar/bing.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo4/bar2/baz.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo4/bar2/bing.txt", "read")
-                );
+        JSONObject jsonPolicy = new JSONObject()
+            .put("file:/tmp/foo.jar", new JSONObject()
+                .put("java.io.FilePermission", new JSONObject()
+                    .put("/tmp/foo/bar/baz.txt", new JSONObject().put("read", new JSONObject()))
+                    .put("/tmp/foo/bar/bing.txt", new JSONObject().put("read", new JSONObject()))
+                    .put("/tmp/foo/blarg.txt", new JSONObject().put("read", new JSONObject()))
+                    .put("/tmp/foo2/bar/baz.txt", new JSONObject().put("read,write", new JSONObject()))
+                    .put("/tmp/foo2/bar/blarg.txt", new JSONObject().put("read,write", new JSONObject()))
+                    .put("/tmp/foo4/bar/baz.txt", new JSONObject().put("read", new JSONObject()))
+                    .put("/tmp/foo4/bar/bing.txt", new JSONObject().put("read", new JSONObject()))
+                    .put("/tmp/foo4/bar2/baz.txt", new JSONObject().put("read", new JSONObject()))
+                    .put("/tmp/foo4/bar2/bing.txt", new JSONObject().put("read", new JSONObject()))
+                )
+            );
         
-        File file = File.createTempFile("test-policy", null);
-        PolicyFileUtil.buildPolicyFile(file.toURI().toURL(), false, permissionRequests, collapsers);
-        assertEquals(IOUtil.readFile(file),
-                "grant codeBase \"file:/tmp/foo.jar\" {\n"
-                + "    permission java.io.FilePermission \"/tmp/foo/bar/*\", \"read\";\n"
-                + "    permission java.io.FilePermission \"/tmp/foo/blarg.txt\", \"read\";\n"
-                + "    permission java.io.FilePermission \"/tmp/foo2/bar/*\", \"read,write\";\n"
-                + "    permission java.io.FilePermission \"/tmp/foo4/-\", \"read\";\n"
-                + "};\n");
+        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        policy.parsePolicy(new StringReader(jsonPolicy.toString()));
+        policy.collapsePolicy();
+        
+        StringWriter writer = new StringWriter();
+        policy.writePolicy(writer);
+        jsonPolicy = new JSONObject(writer.toString());
+        
+        JSONObject fileGrants = jsonPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("java.io.FilePermission");
+        assertEquals(fileGrants.keySet().size(), 4);
+        
+        assertTrue(fileGrants.keySet().contains("/tmp/foo/bar/*"));
+        assertEquals(fileGrants.getJSONObject("/tmp/foo/bar/*").keySet().size(), 1);
+        assertTrue(fileGrants.getJSONObject("/tmp/foo/bar/*").keySet().contains("read"));
+        
+        assertTrue(fileGrants.keySet().contains("/tmp/foo/blarg.txt"));
+        assertEquals(fileGrants.getJSONObject("/tmp/foo/blarg.txt").keySet().size(), 1);
+        assertTrue(fileGrants.getJSONObject("/tmp/foo/blarg.txt").keySet().contains("read"));
+        
+        assertTrue(fileGrants.keySet().contains("/tmp/foo2/bar/*"));
+        assertEquals(fileGrants.getJSONObject("/tmp/foo2/bar/*").keySet().size(), 1);
+        assertTrue(fileGrants.getJSONObject("/tmp/foo2/bar/*").keySet().contains("read,write"));
+        
+        assertTrue(fileGrants.keySet().contains("/tmp/foo4/-"));
+        assertEquals(fileGrants.getJSONObject("/tmp/foo4/-").keySet().size(), 1);
+        assertTrue(fileGrants.getJSONObject("/tmp/foo4/-").keySet().contains("read"));
     }
     
     @Test
@@ -136,16 +129,21 @@ public class PolicyFileUtilTest {
                 + "    permission java.io.FilePermission \"/tmp/foo4/-\", \"read\";\n"
                 + "};\n");
         
-        List<PermissionRequest> permissionRequests = Arrays.asList(
-                new PermissionRequest(0L, "file:/tmp/bar.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo/bar/baz.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/bar.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo/bar/bing.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo/blarg.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo/bar/baz.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo4/bar/bing.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo3/bar/baz.txt", "read")
-                );
+        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        policy.parseJavaPolicy(new FileReader(file));
         
-        PolicyFileUtil.buildPolicyFile(file.toURI().toURL(), false, permissionRequests, collapsers);
+        java.security.cert.Certificate[] certs = null;
+        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new FilePermission("/tmp/foo/bar/baz.txt", "read"));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new FilePermission("/tmp/foo/bar/bing.txt", "read"));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/foo.jar"), certs), new FilePermission("/tmp/foo/blarg.txt", "read"));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/foo.jar"), certs), new FilePermission("/tmp/foo3/bar/baz.txt", "read"));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/foo.jar"), certs), new FilePermission("/tmp/foo4/bar/bing.txt", "read"));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/foo.jar"), certs), new FilePermission("/tmp/foo2/bar/baz.txt", "read"));
+        
+        policy.addViolationsToPolicy();
+        policy.collapsePolicy();
+        policy.writeJavaPolicy(new FileWriter(file));
+        
         assertEquals(IOUtil.readFile(file),
                 "grant codeBase \"file:/tmp/bar.jar\" {\n"
                 + "    permission java.io.FilePermission \"/tmp/foo/bar/*\", \"read\";\n"
@@ -212,29 +210,22 @@ public class PolicyFileUtilTest {
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/pages/1416865080967/1416865080967.xml\", \"read\";\n"
                 + "    permission java.io.FilePermission \"/usr/lib/jvm/jdk-8-oracle-x64/jre/lib/xerces.properties\", \"read\";\n"
                 + "};\n");
-                
-        PolicyFileUtil.buildPolicyFile(file.toURI().toURL(), true, Collections.<PermissionRequest>emptyList(), collapsers);
+
+        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        policy.parseJavaPolicy(new FileReader(file));
+        policy.collapsePolicy();
+        policy.writeJavaPolicy(new FileWriter(file));
+        
         assertEquals(IOUtil.readFile(file), 
                 "grant codeBase \"file:/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/WEB-INF/lib/-\" {\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble\", \"read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble/*\", \"read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default\", \"read,write\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/-\", \"read,write\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/2014/11/24/1416865020000.xml\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/files/blog_shellshock.txt\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/images/Image080.jpg\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/indexes/pages.lock\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/indexes/search/*\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/pages/1416865080967.lock\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/theme.bak\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/theme.bak/*\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/theme.bak/images/*\", \"delete\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/theme/aaa\", \"delete\";\n"
+                + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default/-\", \"delete,read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble/realm/*\", \"read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/temp\", \"read\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/temp/*\", \"delete,write\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/themes/user-default/*\", \"write\";\n"
-                + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/themes/user-default/aaa\", \"delete\";\n"
+                + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/themes/user-default/*\", \"delete,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/themes/user-default/images/*\", \"write\";\n"
                 + "    permission java.io.FilePermission \"/usr/lib/jvm/jdk-8-oracle-x64/jre/lib/xerces.properties\", \"read\";\n"
                 + "};\n");
@@ -242,21 +233,58 @@ public class PolicyFileUtilTest {
     
     @Test
     public void testOtherPerms() throws IOException {
-        List<PermissionRequest> permissionRequests = Arrays.asList(
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo/bar/baz.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "java.io.FilePermission", "/tmp/foo/bar/bing.txt", "read"),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "com.acme.MyPermission", "tacos", null),
-                new PermissionRequest(0L, "file:/tmp/foo.jar", "com.foo.Bar", "com.acme.MyPermission", "burritos", null)
-                );
+        
+        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        
+        java.security.cert.Certificate[] certs = null;
+        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new FilePermission("/tmp/foo/bar/baz.txt", "read"));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new FilePermission("/tmp/foo/bar/bing.txt", "read"));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("tacos"));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("burritos"));
+        policy.addViolationsToPolicy();
+        policy.collapsePolicy();
         
         File file = File.createTempFile("test-policy", null);
-        PolicyFileUtil.buildPolicyFile(file.toURI().toURL(), false, permissionRequests, collapsers);
+        policy.writeJavaPolicy(new FileWriter(file));
+        
         assertEquals(IOUtil.readFile(file),
-                "grant codeBase \"file:/tmp/foo.jar\" {\n"
-                + "    permission com.acme.MyPermission \"burritos\";\n"
-                + "    permission com.acme.MyPermission \"tacos\";\n"
+                "grant codeBase \"file:/tmp/bar.jar\" {\n"
+                + "    permission com.coverity.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission \"burritos\";\n"
+                + "    permission com.coverity.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission \"tacos\";\n"
                 + "    permission java.io.FilePermission \"/tmp/foo/bar/*\", \"read\";\n"
                 + "};\n");
+    }
+    
+    private static class MyPermission extends Permission {
+        private static final long serialVersionUID = 1L;
+
+        public MyPermission(String name) {
+            super(name);
+        }
+
+        @Override
+        public boolean implies(Permission permission) {
+            return false;
+        }
+
+        @Override
+        public String getActions() {
+            return null;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || !(obj instanceof MyPermission)) {
+                return false;
+            }
+            return getName().equals(((MyPermission)obj).getName());
+        }
+
+        @Override
+        public int hashCode() {
+            return getName().hashCode();
+        }
+        
     }
     
     @Test
@@ -270,7 +298,9 @@ public class PolicyFileUtilTest {
                 + "    permission java.io.FilePermission \"/tmp/foo/bar/*\", \"read\";\n"
                 + "};\n");
         
-        PolicyFileUtil.buildPolicyFile(new File("/home/ihaken/tomcats/pebble/lib/piePolicy.policy").toURI().toURL(), false, Collections.<PermissionRequest>emptyList(), collapsers);
+        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        policy.parseJavaPolicy(new FileReader(file));
+        policy.writeJavaPolicy(new FileWriter(file));
 
         assertEquals(IOUtil.readFile(file),
                 "grant codeBase \"file:/tmp/foo.jar\" {\n"
@@ -278,5 +308,26 @@ public class PolicyFileUtilTest {
                 + "    permission com.acme.MyPermission \"tacos\";\n"
                 + "    permission java.io.FilePermission \"/tmp/foo/bar/*\", \"read\";\n"
                 + "};\n");
+    }
+    
+    @Test
+    public void testImplies() throws IOException {
+        JSONObject jsonPolicy = new JSONObject()
+        .put("file:/tmp/foo.jar", new JSONObject()
+            .put("java.io.FilePermission", new JSONObject()
+                .put("/tmp/foo/bar/baz.txt", new JSONObject().put("read", new JSONObject()))
+            )
+        );
+    
+        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        policy.parsePolicy(new StringReader(jsonPolicy.toString()));
+        
+        final CodeSource codeSource = new CodeSource(new URL("file:/tmp/foo.jar"), (java.security.cert.Certificate[])null);
+        assertTrue(policy.implies(codeSource, new FilePermission("/tmp/foo/bar/baz.txt", "read")));
+        assertFalse(policy.implies(codeSource, new FilePermission("/tmp/foo/bar/baz.txt", "write")));
+        assertFalse(policy.implies(codeSource, new FilePermission("/tmp/foo/bar/bar.txt", "read")));
+        
+        final CodeSource codeSource2 = new CodeSource(new URL("file:/tmp/bar.jar"), (java.security.cert.Certificate[])null);
+        assertFalse(policy.implies(codeSource2, new FilePermission("/tmp/foo/bar/baz.txt", "read")));
     }
 }

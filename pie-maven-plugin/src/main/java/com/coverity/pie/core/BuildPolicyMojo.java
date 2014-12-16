@@ -1,8 +1,10 @@
-package com.coverity.pie;
+package com.coverity.pie.core;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -25,9 +27,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import com.coverity.pie.core.PieConfig;
-import com.coverity.pie.core.PolicyBuilder;
-import com.coverity.pie.policy.csp.CspPolicyBuilder;
-import com.coverity.pie.policy.securitymanager.SecurityManagerPolicyBuilder;
+import com.coverity.pie.core.Policy;
+import com.coverity.pie.core.PolicyConfig;
+import com.coverity.pie.policy.csp.CspPolicy;
+import com.coverity.pie.policy.securitymanager.SecurityManagerPolicy;
+import com.coverity.pie.util.IOUtil;
 
 @Mojo( name = "build-policy", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST )
 public class BuildPolicyMojo extends AbstractMojo
@@ -44,9 +48,9 @@ public class BuildPolicyMojo extends AbstractMojo
     @Parameter( defaultValue = "false", property = "clearViolations", required = true)
     private boolean clearViolations;
 
-    private static final Collection<Class<? extends PolicyBuilder>> POLICY_BUILDER_CLASSES = Arrays.<Class<? extends PolicyBuilder>>asList(
-            SecurityManagerPolicyBuilder.class,
-            CspPolicyBuilder.class
+    private static final Collection<Class<? extends Policy>> POLICY_CLASSES = Arrays.<Class<? extends Policy>>asList(
+            SecurityManagerPolicy.class,
+            CspPolicy.class
             );
             
     
@@ -70,17 +74,26 @@ public class BuildPolicyMojo extends AbstractMojo
             }
         }
         
-        for (Class<? extends PolicyBuilder> clazz : POLICY_BUILDER_CLASSES) {
+        for (Class<? extends Policy> clazz : POLICY_CLASSES) {
         
-            PolicyBuilder policyBuilder;
+            Policy policy;
             try {
-                policyBuilder = clazz.newInstance();
+                policy = clazz.newInstance();
             } catch (InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
-            policyBuilder.init(pieConfig);
-            if (!policyBuilder.isEnabled()) {
+            PolicyConfig policyConfig = new PolicyConfig(policy.getName(), pieConfig);
+            if (!policyConfig.isEnabled()) {
                 continue;
+            }
+            InputStream is = null;
+            try {
+                is = policyConfig.getPolicyFile().openStream();
+                policy.parsePolicy(new InputStreamReader(is));                
+            } catch (IOException e) {
+                throw new MojoExecutionException("Could not parse policy file: " + policyConfig.getPolicyFile().toString());
+            } finally {
+                IOUtil.closeSilently(is);
             }
             
             URIBuilder uriBuilder;
@@ -90,7 +103,7 @@ public class BuildPolicyMojo extends AbstractMojo
                 throw new MojoExecutionException("Invalid serverUrl.", e);
             }
             
-            uriBuilder.addParameter("policyEnforcer", policyBuilder.getName());
+            uriBuilder.addParameter("policyEnforcer", policy.getName());
             if (startTimeMill != null) {
                 uriBuilder.addParameter("startTime", startTimeMill.toString());
             }
@@ -106,6 +119,7 @@ public class BuildPolicyMojo extends AbstractMojo
             }
             
             CloseableHttpResponse response1 = null;
+            is = null;
             try {
                 response1 = httpclient.execute(httpGet);
                 long contentLength = response1.getEntity().getContentLength();
@@ -113,17 +127,21 @@ public class BuildPolicyMojo extends AbstractMojo
                     throw new MojoExecutionException("Server response was too large.");
                 }            
                 HttpEntity entity1 = response1.getEntity();
-                InputStream is = entity1.getContent();
+                is = entity1.getContent();
                 String body = IOUtils.toString(is);
                 IOUtils.closeQuietly(is);
                 
-                policyBuilder.registerPolicyViolations(body);
-                policyBuilder.savePolicy();
-                
+                for (String line : body.split("\n")) {
+                    policy.logViolation(line.split("\t"));
+                }
+                policy.addViolationsToPolicy();
+                policy.collapsePolicy();
+                policy.writePolicy(new FileWriter(policyConfig.getPolicyFile().toString()));                
             } catch (IOException e) {
                 throw new MojoExecutionException("Error handling server request.", e);
             } finally {
                 IOUtils.closeQuietly(response1);
+                IOUtils.closeQuietly(is);
             }
         }
         

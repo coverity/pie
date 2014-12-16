@@ -15,7 +15,7 @@ public class PropertyNameFactMetaData implements FactMetaData {
         return instance;
     }
     
-    private final PropertyCollapser propertyCollapser = new PropertyCollapser(0);
+    private final PropertyCollapser propertyCollapser = new PropertyCollapser(2);
 
     @Override
     public StringCollapser getCollapser() {

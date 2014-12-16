@@ -34,7 +34,7 @@ public class PolicyConfig {
         if (resource != null) {
             return resource;
         }
-        String catalinaHome = System.getenv("CATALINA_HOME");
+        String catalinaHome = System.getProperty("catalina.home");
         if (catalinaHome != null) {
             try {
                 return new File(catalinaHome + File.separatorChar + "conf" + File.separatorChar + name + ".policy").toURI().toURL();
