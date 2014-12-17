@@ -8,9 +8,11 @@
     <packaging>pom</packaging>
 
     <modules>
-      <module>pie-common</module>
-      <module>pie-maven-plugin</module>
+      <module>pie-core</module>
       <module>pie-sm</module>
+      <module>pie-csp</module>
+      <module>pie-maven-plugin</module>
+      <module>pie-web</module>
     </modules>
 
     <build>

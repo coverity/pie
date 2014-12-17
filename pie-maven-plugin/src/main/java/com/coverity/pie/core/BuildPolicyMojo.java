@@ -10,8 +10,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -29,8 +27,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import com.coverity.pie.core.PieConfig;
 import com.coverity.pie.core.Policy;
 import com.coverity.pie.core.PolicyConfig;
-import com.coverity.pie.policy.csp.CspPolicy;
-import com.coverity.pie.policy.securitymanager.SecurityManagerPolicy;
 import com.coverity.pie.util.IOUtil;
 
 @Mojo( name = "build-policy", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST )
@@ -47,12 +43,10 @@ public class BuildPolicyMojo extends AbstractMojo
     
     @Parameter( defaultValue = "false", property = "clearViolations", required = true)
     private boolean clearViolations;
+    
+    @Parameter( property = "pluginsRoot", required = true)
+    private File pluginsRoot;
 
-    private static final Collection<Class<? extends Policy>> POLICY_CLASSES = Arrays.<Class<? extends Policy>>asList(
-            SecurityManagerPolicy.class,
-            CspPolicy.class
-            );
-            
     
     public void execute() throws MojoExecutionException
     {
@@ -74,7 +68,7 @@ public class BuildPolicyMojo extends AbstractMojo
             }
         }
         
-        for (Class<? extends Policy> clazz : POLICY_CLASSES) {
+        for (Class<? extends Policy> clazz : JarScanner.getPolicies(FileScanner.findJars(pluginsRoot))) {
         
             Policy policy;
             try {
