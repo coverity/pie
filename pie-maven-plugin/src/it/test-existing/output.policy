@@ -1,3 +1,9 @@
-grant codeBase "file:/var/lib/tomcat/webapps/foo/lib/-" {
-    permission java.io.FilePermission "/var/tmp/foobar", "read,write";
-};
+{
+   "file:/var/lib/tomcat/webapps/foo/lib/-": {
+      "java.io.FilePermission": {
+         "/var/tmp/foobar": {
+            "read,write": {}
+         }
+      }
+   }
+}

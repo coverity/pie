@@ -31,10 +31,20 @@ public class PieAdminFilter implements Filter {
             if ("/c0bd580ddcb4666b1PIEec61812f3cdf305".equals(httpServletRequest.getRequestURI())) {
                 
                 PolicyEnforcer policyEnforcer = pieInitializer.getPolicyEnforcer(httpServletRequest.getParameter("policyEnforcer"));
+                String startTimeStr = httpServletRequest.getParameter("startTime");
+                Long startTime = (startTimeStr == null ? null : Long.parseLong(startTimeStr));
+                
                 if (policyEnforcer != null) {
                     PrintWriter writer = response.getWriter();
                     
-                    for (String[] violation : policyEnforcer.getPolicy().getViolations()) {
+                    String[][] violations;
+                    if (startTime == null) {
+                        violations = policyEnforcer.getPolicy().getViolations();
+                    } else {
+                        violations = policyEnforcer.getPolicy().getViolations(startTime);
+                    }
+                    
+                    for (String[] violation : violations) {
                         if (violation.length > 0) {
                             writer.write(violation[0]);
                         }

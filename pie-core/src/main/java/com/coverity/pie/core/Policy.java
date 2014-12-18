@@ -6,8 +6,10 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -175,9 +177,30 @@ public abstract class Policy {
         writer.close();
     }
     private void writePolicy(Writer writer, FactTreeNode factTreeNode, int indent) throws IOException {
-        Iterator<FactTreeNode> iter = factTreeNode.children.iterator();
-        while (iter.hasNext()) {
-            FactTreeNode child = iter.next();
+        List<FactTreeNode> children = new ArrayList<FactTreeNode>(factTreeNode.children);
+        Collections.sort(children, new Comparator<FactTreeNode>() {
+
+            @Override
+            public int compare(FactTreeNode o1, FactTreeNode o2) {
+                if (o1.value == null) {
+                    if (o2.value != null) {
+                        return 1;
+                    }
+                    if (o2.value == null) {
+                        return 0;
+                    }
+                    return -1;
+                }
+                if (o2.value == null) {
+                    return 1;
+                }
+                return o1.value.compareTo(o2.value);
+            }
+            
+        });
+        
+        for (int i = 0; i < children.size(); i++) {
+            FactTreeNode child = children.get(i);
             for (int j = 0; j < indent; j++) {
                 writer.write("   ");
             }
@@ -195,7 +218,7 @@ public abstract class Policy {
                 writer.write ("}");
             }
             
-            if (iter.hasNext()) {
+            if (i < children.size()-1) {
                 writer.write(",");
             }
             writer.write("\n");
@@ -211,6 +234,12 @@ public abstract class Policy {
     public String[][] getViolations() {
         synchronized (violationStore) {
             return violationStore.getViolations();
+        }
+    }
+    
+    public String[][] getViolations(long sinceTime) {
+        synchronized (violationStore) {
+            return violationStore.getViolations(sinceTime);
         }
     }
 }

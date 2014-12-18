@@ -20,6 +20,9 @@
 				<configuration>
 					<serverUrl>http://localhost:18885/test-existing</serverUrl>
 					<pieConfig>@basedir@/src/test/resources/pieConfig.properties</pieConfig>
+					<pluginRoots>
+						<pluginRoot>@localRepository@/com/coverity/pie/plugin</pluginRoot>
+					</pluginRoots>
 				</configuration>
 				<executions>
 					<execution>

@@ -1,4 +1,4 @@
-0	file:/var/lib/tomcat/webapps/foo/lib/-	com.example.Bar	java.io.FilePermission	/var/zero/a	read
-3599999	file:/var/lib/tomcat/webapps/foo/lib/-	com.example.Bar	java.io.FilePermission	/var/first/a	read
-3600000	file:/var/lib/tomcat/webapps/foo/lib/-	com.example.Bar	java.io.FilePermission	/var/second/a	read
-10000000	file:/var/lib/tomcat/webapps/foo/lib/-	com.example.Bar	java.io.FilePermission	/var/third/a	read
+0	file:/var/lib/tomcat/webapps/foo/lib/-	java.io.FilePermission	/var/zero/a	read
+3599999	file:/var/lib/tomcat/webapps/foo/lib/-	java.io.FilePermission	/var/first/a	read
+3600000	file:/var/lib/tomcat/webapps/foo/lib/-	java.io.FilePermission	/var/second/a	read
+10000000	file:/var/lib/tomcat/webapps/foo/lib/-	java.io.FilePermission	/var/third/a	read

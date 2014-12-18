@@ -1,7 +1,9 @@
 package com.coverity.pie.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ViolationStore {
@@ -37,29 +39,33 @@ public class ViolationStore {
         
     }
     
-    private final Map<Violation, Long> violationCount = new HashMap<>();
+    private final Map<Violation, Long> violationTimes = new HashMap<>();
     
     public void logViolation(String ... facts) {
-        Violation violation = new Violation(facts);
-        Long count = violationCount.get(violation);
-        if (count == null) {
-            violationCount.put(violation, 1L);
-        } else {
-            violationCount.put(violation, count+1L);
-        }
+        violationTimes.put(new Violation(facts), System.currentTimeMillis());
     }
     
     public String[][] getViolations() {
-        String[][] violations = new String[violationCount.size()][];
+        String[][] violations = new String[violationTimes.size()][];
         int index = 0;
-        for (Violation violation : violationCount.keySet()) {
+        for (Violation violation : violationTimes.keySet()) {
             violations[index++] = violation.facts;
         }
         
         return violations;
     }
     
+    public String[][] getViolations(long sinceTime) {
+        List<String[]> violations = new ArrayList<String[]>(violationTimes.size());
+        for (Map.Entry<Violation, Long> entry : violationTimes.entrySet()) {
+            if (entry.getValue() >= sinceTime) {
+                violations.add(entry.getKey().facts);
+            }
+        }
+        return violations.toArray(new String[violations.size()][]);
+    }
+    
     public void clear() {
-        violationCount.clear();
+        violationTimes.clear();
     }
 }

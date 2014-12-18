@@ -83,7 +83,7 @@ public class TestPieServer extends NanoHTTPD {
         }
         
         Map<String, List<String>> decodedQueryParameters = decodeParameters(session.getQueryParameterString());
-        if (!decodedQueryParameters.containsKey("policyEnforcer") || !decodedQueryParameters.get("policyEnforcer").get(0).equals("SecurityManager")) {
+        if (!decodedQueryParameters.containsKey("policyEnforcer") || !decodedQueryParameters.get("policyEnforcer").get(0).equals("securityManager")) {
             return new Response(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Not found.");
         }
         
