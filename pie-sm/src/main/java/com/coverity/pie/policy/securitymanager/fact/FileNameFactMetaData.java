@@ -1,6 +1,10 @@
 package com.coverity.pie.policy.securitymanager.fact;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.coverity.pie.core.FactMetaData;
+import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.util.collapser.FilePathCollapser;
 
@@ -15,16 +19,30 @@ public class FileNameFactMetaData implements FactMetaData {
         return instance;
     }
     
-    private final FilePathCollapser filePathCollapser = new FilePathCollapser(2);
+    private final Map<Integer, StringCollapser> collapsers = new HashMap<Integer, StringCollapser>();;
+    private final FilePathCollapser defaultCollapser = new FilePathCollapser(2);
     
     @Override
-    public StringCollapser getCollapser() {
-        return filePathCollapser;
+    public StringCollapser getCollapser(PolicyConfig policyConfig) {
+        int collapseThreshold = policyConfig.getInteger("FilePermission.collapseThreshold", 2);
+        if (collapseThreshold == 2) {
+            return defaultCollapser;
+        }
+        
+        synchronized (collapsers) {
+            if (collapsers.containsKey(collapseThreshold)) {
+                return collapsers.get(collapseThreshold);
+            }
+            StringCollapser collapser = new FilePathCollapser(collapseThreshold);
+            collapsers.put(collapseThreshold, collapser);
+            return collapser;
+        }
+        
     }
 
     @Override
     public boolean matches(String matcher, String matchee) {
-        return filePathCollapser.pathNameMatches(matcher, matchee);
+        return defaultCollapser.pathNameMatches(matcher, matchee);
     }
 
     @Override

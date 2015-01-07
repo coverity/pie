@@ -3,6 +3,7 @@ package com.coverity.pie.policy.securitymanager.fact;
 import com.coverity.pie.core.EqualityStringMatcher;
 import com.coverity.pie.core.FactMetaData;
 import com.coverity.pie.core.NullStringCollapser;
+import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.StringCollapser;
 
 public class PermissionNameFactMetaData implements FactMetaData {
@@ -18,7 +19,7 @@ public class PermissionNameFactMetaData implements FactMetaData {
     
     
     @Override
-    public StringCollapser getCollapser() {
+    public StringCollapser getCollapser(PolicyConfig policyConfig) {
         return NullStringCollapser.getInstance();
     }
 

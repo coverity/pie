@@ -64,47 +64,52 @@ public class DynamicJavaPolicy extends Policy {
     
     @Override
     public boolean implies(ProtectionDomain domain, Permission permission) {
-        // Blacklisted
-        if (permission.getName().equals("setPolicy") || permission.getName().equals("setSecurityManager")) {
-            return false;
-        }
-        
-        for (Policy parentPolicy : parentPolicies) {
-            if (parentPolicy.implies(domain, permission)) {
-                return true;
+        try {
+            // Blacklisted
+            if (permission.getName().equals("setPolicy") || permission.getName().equals("setSecurityManager")) {
+                return false;
             }
-        }
-        
-        String callingClassName = Thread.currentThread().getStackTrace()[2].getClassName();
-        if (callingClassName.startsWith("com.coverity.pie.")) {
-            Certificate[] certificates = domain.getCodeSource().getCertificates();
-            if (certificates != null && certificates.length > 0) {
-                try {
-                    certificates[0].verify(coverityPublicKey);
+            
+            for (Policy parentPolicy : parentPolicies) {
+                if (parentPolicy.implies(domain, permission)) {
                     return true;
-                } catch (InvalidKeyException e) {
-                    // Do nothing
-                } catch (CertificateException e) {
-                    // Do nothing
-                } catch (NoSuchAlgorithmException e) {
-                    // Do nothing
-                } catch (NoSuchProviderException e) {
-                    // Do nothing
-                } catch (SignatureException e) {
-                    // Do nothing
                 }
             }
+            
+            String callingClassName = Thread.currentThread().getStackTrace()[2].getClassName();
+            if (callingClassName.startsWith("com.coverity.pie.")) {
+                Certificate[] certificates = domain.getCodeSource().getCertificates();
+                if (certificates != null && certificates.length > 0) {
+                    try {
+                        certificates[0].verify(coverityPublicKey);
+                        return true;
+                    } catch (InvalidKeyException e) {
+                        // Do nothing
+                    } catch (CertificateException e) {
+                        // Do nothing
+                    } catch (NoSuchAlgorithmException e) {
+                        // Do nothing
+                    } catch (NoSuchProviderException e) {
+                        // Do nothing
+                    } catch (SignatureException e) {
+                        // Do nothing
+                    }
+                }
+            }
+            
+            if (policy.implies(domain.getCodeSource(), permission)) {
+                return true;
+            }
+            policy.logViolation(domain.getCodeSource(), permission);
+            
+            if (policyConfig.isReportOnlyMode()) {
+                return true;
+            }
+            return false;
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            throw e;
         }
-        
-        if (policy.implies(domain.getCodeSource(), permission)) {
-            return true;
-        }
-        policy.logViolation(domain.getCodeSource(), permission);
-        
-        if (policyConfig.isReportOnlyMode()) {
-            return true;
-        }
-        return false;
     }
      
     

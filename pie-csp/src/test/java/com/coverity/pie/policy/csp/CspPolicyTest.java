@@ -3,10 +3,15 @@ package com.coverity.pie.policy.csp;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 
-import org.json.JSONObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import com.coverity.pie.core.PieConfig;
+import com.coverity.pie.core.PolicyConfig;
+import com.coverity.pie.thirdparty.json.JSONObject;
 
 public class CspPolicyTest {
     @Test
@@ -69,7 +74,7 @@ public class CspPolicyTest {
             )
         );
         
-        CspPolicy policy = new CspPolicy();
+        CspPolicy policy = createPolicy();
         policy.parsePolicy(new StringReader(jsonPolicy.toString()));
         policy.collapsePolicy();
         
@@ -136,7 +141,7 @@ public class CspPolicyTest {
             )
         );
         
-        CspPolicy policy = new CspPolicy();
+        CspPolicy policy = createPolicy();
         policy.parsePolicy(new StringReader(jsonPolicy.toString()));
         
         Assert.assertEquals(policy.getPolicyForUri("/a/b/c/d"),
@@ -179,7 +184,7 @@ public class CspPolicyTest {
             )
         );
         
-        CspPolicy policy = new CspPolicy();
+        CspPolicy policy = createPolicy();
         policy.parsePolicy(new StringReader(jsonPolicy.toString()));
         policy.collapsePolicy();
         
@@ -224,7 +229,7 @@ public class CspPolicyTest {
             )
         );
         
-        CspPolicy policy = new CspPolicy();
+        CspPolicy policy = createPolicy();
         policy.parsePolicy(new StringReader(jsonPolicy.toString()));
         
         //Assert.assertEquals(policy.getPolicyForUri("/"),
@@ -245,5 +250,27 @@ public class CspPolicyTest {
         Assert.assertEquals(policy.getPolicyForUri("/a/b/c/d"),
                 "connect-src 'self'; font-src 'self'; frame-src 'self'; img-src 'self'; media-src 'self'; object-src 'self'; script-src 'self' b.c.com; style-src 'self'");
         
+    }
+    
+    @Test
+    public void testRootUri() throws URISyntaxException {
+        CspPolicy policy = createPolicy();
+        policy.logViolation(new URI("/"), "img-src", "'self'");
+        policy.logViolation(new URI("/foo"), "img-src", "example.com");
+        policy.logViolation(new URI("/a/b"), "img-src", "com.example");
+        policy.addViolationsToPolicy();
+        
+        Assert.assertEquals(policy.getPolicyForUri("/"), 
+                "connect-src 'none'; font-src 'none'; frame-src 'none'; img-src 'self'; media-src 'none'; object-src 'none'; script-src 'none'; style-src 'none'");
+        Assert.assertEquals(policy.getPolicyForUri("/foo"), 
+                "connect-src 'none'; font-src 'none'; frame-src 'none'; img-src example.com; media-src 'none'; object-src 'none'; script-src 'none'; style-src 'none'");
+        Assert.assertEquals(policy.getPolicyForUri("/a/b"), 
+                "connect-src 'none'; font-src 'none'; frame-src 'none'; img-src com.example; media-src 'none'; object-src 'none'; script-src 'none'; style-src 'none'");
+    }
+    
+    private static CspPolicy createPolicy() {
+        CspPolicy policy = new CspPolicy();
+        policy.setPolicyConfig(new PolicyConfig(policy.getName(), new PieConfig()));
+        return policy;
     }
 }

@@ -18,6 +18,7 @@
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20140107</version>
+            <scope>provided</scope> <!-- provided because it is embedded by the jarjar plugin -->
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -40,5 +41,38 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>jarjar-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jarjar</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>org.json:json</include>
+                            </includes>
+                            <rules>
+                                <rule>
+                                    <pattern>org.json.**</pattern>
+                                    <result>com.coverity.pie.thirdparty.json.@1</result>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Even though this is in the parent, explicitly put it here so it runs after jarjar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jarsigner-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

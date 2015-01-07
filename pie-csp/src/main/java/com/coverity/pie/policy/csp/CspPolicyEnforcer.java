@@ -18,6 +18,7 @@ public class CspPolicyEnforcer implements PolicyEnforcer {
     public void init(PieConfig pieConfig) {
         policy = new CspPolicy();
         policyConfig = new PolicyConfig(policy.getName(), pieConfig);
+        policy.setPolicyConfig(policyConfig);
     }
     
     @Override

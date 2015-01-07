@@ -1,6 +1,7 @@
 package com.coverity.pie.policy.securitymanager.fact;
 
 import com.coverity.pie.core.FactMetaData;
+import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.core.UnsupportedFactMetaData;
 import com.coverity.pie.policy.securitymanager.CsvActionCollapser;
@@ -17,7 +18,7 @@ public class CsvActionFactMetaData implements FactMetaData {
     }
     
     @Override
-    public StringCollapser getCollapser() {
+    public StringCollapser getCollapser(PolicyConfig policyConfig) {
         return CsvActionCollapser.getInstance();
     }
 

@@ -1,7 +1,9 @@
 package com.coverity.pie.core;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
 
@@ -16,7 +18,16 @@ public class PieConfig {
     private boolean adminInterfaceEnabled;
     
     public PieConfig() {
-        init(this.getClass().getClassLoader().getResource("pieConfig.properties"));
+        File propFile = new File("pieConfig.properties");
+        if (propFile.exists()) {
+            try {
+                init(propFile.toURI().toURL());
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            init(this.getClass().getClassLoader().getResource("pieConfig.properties"));
+        }
     }
     public PieConfig(URL propertiesUrl) {
         init(propertiesUrl);

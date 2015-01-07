@@ -5,19 +5,19 @@ import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.util.collapser.PropertyCollapser;
 
-public class PropertyNameFactMetaData implements FactMetaData {
+public class JmxMBeanClassNameFactMetaData implements FactMetaData {
+
+    private static final JmxMBeanClassNameFactMetaData instance = new JmxMBeanClassNameFactMetaData();
     
-    private static final PropertyNameFactMetaData instance = new PropertyNameFactMetaData();
-    
-    private PropertyNameFactMetaData() {
+    private JmxMBeanClassNameFactMetaData() {
     }
     
-    public static PropertyNameFactMetaData getInstance() {
+    public static JmxMBeanClassNameFactMetaData getInstance() {
         return instance;
     }
     
     private final PropertyCollapser propertyCollapser = new PropertyCollapser(2);
-
+    
     @Override
     public StringCollapser getCollapser(PolicyConfig policyConfig) {
         return propertyCollapser;
@@ -30,7 +30,7 @@ public class PropertyNameFactMetaData implements FactMetaData {
 
     @Override
     public FactMetaData getChildFactMetaData(String fact) {
-        return CsvActionFactMetaData.getInstance();
+        return JmxMBeanMemberFactMetaData.getInstance();
     }
 
 }

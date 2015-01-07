@@ -31,7 +31,7 @@ public class UriCspDirectiveCollapser extends AbstractPathCollapser implements S
     public <T> Map<String, Collection<T>> collapse(Map<String, Collection<T>> input) {
         Map<PathName, Collection<T>> inputMap = new HashMap<PathName, Collection<T>>(input.size());
         for (Map.Entry<String, Collection<T>> entry : input.entrySet()) {
-            inputMap.put(new PathName(entry.getKey().split("/"), null), entry.getValue());
+            inputMap.put(new PathName(entry.getKey().split("/", -1), null), entry.getValue());
         }
         Map<PathName, Collection<T>> outputMap = collapsePaths(inputMap);
         Map<String, Collection<T>> output = new HashMap<String, Collection<T>>(outputMap.size());
@@ -43,6 +43,6 @@ public class UriCspDirectiveCollapser extends AbstractPathCollapser implements S
     
     public boolean pathNameMatches(String matcher, String matchee) {
         // Use the super path name matcher so that we can match against root URI
-        return super.pathNameMatches(new PathName(matcher.split("/"), null), new PathName(matchee.split("/"), null));
+        return super.pathNameMatches(new PathName(matcher.split("/", -1), null), new PathName(matchee.split("/", -1), null));
     }
 }

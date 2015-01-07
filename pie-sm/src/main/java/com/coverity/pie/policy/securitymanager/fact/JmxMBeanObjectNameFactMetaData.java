@@ -6,19 +6,21 @@ import com.coverity.pie.core.NullStringCollapser;
 import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.StringCollapser;
 
-public class PermissionClassFactMetaData implements FactMetaData {
+public class JmxMBeanObjectNameFactMetaData implements FactMetaData {
 
-    private static final PermissionClassFactMetaData instance = new PermissionClassFactMetaData();
+    private static final JmxMBeanObjectNameFactMetaData instance = new JmxMBeanObjectNameFactMetaData();
     
-    private PermissionClassFactMetaData() {
+    private JmxMBeanObjectNameFactMetaData() {
     }
     
-    public static PermissionClassFactMetaData getInstance() {
+    public static JmxMBeanObjectNameFactMetaData getInstance() {
         return instance;
     }
     
     @Override
     public StringCollapser getCollapser(PolicyConfig policyConfig) {
+        // FIXME: Object name matching and collapsing is non-trivial
+        // https://docs.oracle.com/javase/7/docs/api/javax/management/ObjectName.html
         return NullStringCollapser.getInstance();
     }
 
@@ -29,16 +31,7 @@ public class PermissionClassFactMetaData implements FactMetaData {
 
     @Override
     public FactMetaData getChildFactMetaData(String fact) {
-        switch (fact) {
-        case "java.io.FilePermission":
-            return FileNameFactMetaData.getInstance();
-        case "java.util.PropertyPermission":
-            return PropertyNameFactMetaData.getInstance();
-        case "javax.management.MBeanPermission":
-            return JmxMBeanClassNameFactMetaData.getInstance();
-        default:
-            return PermissionNameFactMetaData.getInstance();
-        }
+        return PermissionActionFactMetaData.getInstance();
     }
 
 }

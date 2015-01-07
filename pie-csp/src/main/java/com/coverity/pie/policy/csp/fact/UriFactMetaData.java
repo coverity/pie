@@ -1,6 +1,7 @@
 package com.coverity.pie.policy.csp.fact;
 
 import com.coverity.pie.core.FactMetaData;
+import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.util.collapser.UriCspDirectiveCollapser;
 
@@ -18,7 +19,7 @@ public class UriFactMetaData implements FactMetaData {
     private final UriCspDirectiveCollapser uriCspDirectiveCollapser = new UriCspDirectiveCollapser(2);
     
     @Override
-    public StringCollapser getCollapser() {
+    public StringCollapser getCollapser(PolicyConfig policyConfig) {
         return uriCspDirectiveCollapser;
     }
 

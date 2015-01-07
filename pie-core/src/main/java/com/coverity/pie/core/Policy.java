@@ -27,11 +27,16 @@ public abstract class Policy {
         }
     }
     
+    private PolicyConfig policyConfig = null;
     private FactTreeNode policyRoot = new FactTreeNode(null);
     private ViolationStore violationStore = new ViolationStore();
     
     public abstract String getName();
     public abstract FactMetaData getRootFactMetaData();
+    
+    public void setPolicyConfig(PolicyConfig policyConfig) {
+        this.policyConfig = policyConfig;
+    }
     
     protected final boolean implies(String ... facts) {
         int factIndex = 0;
@@ -147,7 +152,7 @@ public abstract class Policy {
                 childMap.get(child.value).addAll(child.children);
             }
         }
-        childMap = factMetaData.getCollapser().collapse(childMap);
+        childMap = factMetaData.getCollapser(policyConfig).collapse(childMap);
         
         FactTreeNode factTreeNode = new FactTreeNode(rootValue);
         for (Map.Entry<String, Collection<FactTreeNode>> entry : childMap.entrySet()) {

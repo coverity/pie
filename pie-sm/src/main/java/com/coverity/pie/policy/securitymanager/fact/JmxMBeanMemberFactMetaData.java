@@ -6,14 +6,14 @@ import com.coverity.pie.core.NullStringCollapser;
 import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.StringCollapser;
 
-public class PermissionClassFactMetaData implements FactMetaData {
+public class JmxMBeanMemberFactMetaData implements FactMetaData {
 
-    private static final PermissionClassFactMetaData instance = new PermissionClassFactMetaData();
+    private static final JmxMBeanMemberFactMetaData instance = new JmxMBeanMemberFactMetaData();
     
-    private PermissionClassFactMetaData() {
+    private JmxMBeanMemberFactMetaData() {
     }
     
-    public static PermissionClassFactMetaData getInstance() {
+    public static JmxMBeanMemberFactMetaData getInstance() {
         return instance;
     }
     
@@ -29,16 +29,7 @@ public class PermissionClassFactMetaData implements FactMetaData {
 
     @Override
     public FactMetaData getChildFactMetaData(String fact) {
-        switch (fact) {
-        case "java.io.FilePermission":
-            return FileNameFactMetaData.getInstance();
-        case "java.util.PropertyPermission":
-            return PropertyNameFactMetaData.getInstance();
-        case "javax.management.MBeanPermission":
-            return JmxMBeanClassNameFactMetaData.getInstance();
-        default:
-            return PermissionNameFactMetaData.getInstance();
-        }
+        return JmxMBeanObjectNameFactMetaData.getInstance();
     }
 
 }

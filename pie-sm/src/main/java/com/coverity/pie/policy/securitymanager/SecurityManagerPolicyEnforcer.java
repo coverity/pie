@@ -19,8 +19,9 @@ public class SecurityManagerPolicyEnforcer implements PolicyEnforcer {
 
     @Override
     public void init(PieConfig pieConfig) {
-        this.policy = new SecurityManagerPolicy();
-        this.policyConfig = new PolicyConfig(policy.getName(), pieConfig);
+        policy = new SecurityManagerPolicy();
+        policyConfig = new PolicyConfig(policy.getName(), pieConfig);
+        policy.setPolicyConfig(policyConfig);
     }
     
     @Override

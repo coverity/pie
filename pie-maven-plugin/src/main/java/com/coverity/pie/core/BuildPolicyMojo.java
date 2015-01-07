@@ -85,6 +85,7 @@ public class BuildPolicyMojo extends AbstractMojo
                 if (!policyConfig.isEnabled()) {
                     continue;
                 }
+                policy.setPolicyConfig(policyConfig);
                 
                 final URL policyUrl = policyConfig.getPolicyFile();
                 if (!policyUrl.getProtocol().equals("file")) {

@@ -42,7 +42,13 @@ public class PolicyConfig {
                 throw new IllegalStateException("Could not build default policy file path.");
             }
         }
-        throw new IllegalStateException("Could not find default path for policy.");
+        
+        // Default to file in the CWD
+        try {
+            return new File(name + ".policy").toURI().toURL();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     public boolean getBoolean(String prop, boolean defaultValue) {
@@ -51,6 +57,13 @@ public class PolicyConfig {
             return defaultValue;
         }
         return Boolean.parseBoolean(v);
+    }
+    public int getInteger(String prop, int defaultValue) {
+        String v = getProperty(prop);
+        if (v == null) {
+            return defaultValue;
+        }
+        return Integer.parseInt(v);
     }
     
     

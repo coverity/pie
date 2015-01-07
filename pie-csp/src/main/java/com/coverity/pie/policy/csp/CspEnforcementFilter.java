@@ -13,10 +13,9 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import com.coverity.pie.core.PolicyConfig;
+import com.coverity.pie.thirdparty.json.JSONException;
+import com.coverity.pie.thirdparty.json.JSONObject;
 import com.coverity.pie.util.IOUtil;
 
 public class CspEnforcementFilter implements Filter {

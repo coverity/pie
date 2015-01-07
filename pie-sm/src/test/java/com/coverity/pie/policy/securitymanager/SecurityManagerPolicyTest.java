@@ -14,10 +14,13 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.Permission;
+import java.security.cert.Certificate;
 
-import org.json.JSONObject;
 import org.testng.annotations.Test;
 
+import com.coverity.pie.core.PieConfig;
+import com.coverity.pie.core.PolicyConfig;
+import com.coverity.pie.thirdparty.json.JSONObject;
 import com.coverity.pie.util.IOUtil;
 
 public class SecurityManagerPolicyTest {
@@ -67,7 +70,7 @@ public class SecurityManagerPolicyTest {
                 
         
         IOUtil.writeFile(file, contents);
-        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        SecurityManagerPolicy policy = createPolicy();
         policy.parseJavaPolicy(new FileReader(file));
         policy.writeJavaPolicy(new FileWriter(file));
         assertEquals(IOUtil.readFile(file), contents);
@@ -90,7 +93,7 @@ public class SecurityManagerPolicyTest {
                 )
             );
         
-        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        SecurityManagerPolicy policy = createPolicy();
         policy.parsePolicy(new StringReader(jsonPolicy.toString()));
         policy.collapsePolicy();
         
@@ -129,7 +132,7 @@ public class SecurityManagerPolicyTest {
                 + "    permission java.io.FilePermission \"/tmp/foo4/-\", \"read\";\n"
                 + "};\n");
         
-        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        SecurityManagerPolicy policy = createPolicy();
         policy.parseJavaPolicy(new FileReader(file));
         
         java.security.cert.Certificate[] certs = null;
@@ -211,7 +214,7 @@ public class SecurityManagerPolicyTest {
                 + "    permission java.io.FilePermission \"/usr/lib/jvm/jdk-8-oracle-x64/jre/lib/xerces.properties\", \"read\";\n"
                 + "};\n");
 
-        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        SecurityManagerPolicy policy = createPolicy();
         policy.parseJavaPolicy(new FileReader(file));
         policy.collapsePolicy();
         policy.writeJavaPolicy(new FileWriter(file));
@@ -234,7 +237,7 @@ public class SecurityManagerPolicyTest {
     @Test
     public void testOtherPerms() throws IOException {
         
-        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        SecurityManagerPolicy policy = createPolicy();
         
         java.security.cert.Certificate[] certs = null;
         policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new FilePermission("/tmp/foo/bar/baz.txt", "read"));
@@ -298,7 +301,7 @@ public class SecurityManagerPolicyTest {
                 + "    permission java.io.FilePermission \"/tmp/foo/bar/*\", \"read\";\n"
                 + "};\n");
         
-        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        SecurityManagerPolicy policy = createPolicy();
         policy.parseJavaPolicy(new FileReader(file));
         policy.writeJavaPolicy(new FileWriter(file));
 
@@ -319,7 +322,7 @@ public class SecurityManagerPolicyTest {
             )
         );
     
-        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        SecurityManagerPolicy policy = createPolicy();
         policy.parsePolicy(new StringReader(jsonPolicy.toString()));
         
         final CodeSource codeSource = new CodeSource(new URL("file:/tmp/foo.jar"), (java.security.cert.Certificate[])null);
@@ -329,5 +332,76 @@ public class SecurityManagerPolicyTest {
         
         final CodeSource codeSource2 = new CodeSource(new URL("file:/tmp/bar.jar"), (java.security.cert.Certificate[])null);
         assertFalse(policy.implies(codeSource2, new FilePermission("/tmp/foo/bar/baz.txt", "read")));
+    }
+    
+    @Test
+    public void testConfigCollapseThreshold() throws IOException {
+        File file = File.createTempFile("test-config", null);
+        IOUtil.writeFile(file,
+                "pie.enabled = true\n"
+                + "securityManager.enabled = true\n"
+                + "securityManager.FilePermission.collapseThreshold = 4");
+        
+        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        policy.setPolicyConfig(new PolicyConfig(policy.getName(), new PieConfig(file.toURI().toURL())));
+        
+        final CodeSource codeSource = new CodeSource(new URL("file:/tmp/foo.jar"), new Certificate[0]); 
+        policy.logViolation(codeSource, new FilePermission("/a/b/c", "read"));
+        policy.logViolation(codeSource, new FilePermission("/a/b/d", "read"));
+        policy.logViolation(codeSource, new FilePermission("/a/b/e", "read"));
+        policy.logViolation(codeSource, new FilePermission("/x/b/c", "read"));
+        policy.logViolation(codeSource, new FilePermission("/x/b/d", "read"));
+        policy.logViolation(codeSource, new FilePermission("/x/b/e", "read"));
+        policy.logViolation(codeSource, new FilePermission("/x/b/f", "read"));
+        
+        policy.addViolationsToPolicy();
+        policy.collapsePolicy();
+        
+        StringWriter sw = new StringWriter();
+        policy.writePolicy(sw);
+        JSONObject outPolicy = new JSONObject(sw.toString());
+        
+        assertEquals(outPolicy.length(), 1);
+        assertTrue(outPolicy.has("file:/tmp/foo.jar"));
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").length(), 1);
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").has("java.io.FilePermission"));
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("java.io.FilePermission").length(), 4);
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("java.io.FilePermission").has("/a/b/c"));
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("java.io.FilePermission").has("/a/b/d"));
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("java.io.FilePermission").has("/a/b/e"));
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("java.io.FilePermission").has("/x/b/*"));
+    }
+    
+    @Test
+    public void testMBeanPermissionFacts() throws IOException {
+        SecurityManagerPolicy policy = createPolicy();
+        
+        final CodeSource codeSource = new CodeSource(new URL("file:/tmp/foo.jar"), new Certificate[0]);
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:name=com.coverity.caas.app.resources.webapp.GitHubInvitationResource.list.exceptions]", "registerMBean"));
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:name=com.coverity.caas.app.resources.webapp.GitHubInvitationResource.list]", "registerMBean"));
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:name=com.coverity.caas.app.resources.webapp.WebTokensResource.generate.exceptions]", "registerMBean"));
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:name=com.coverity.caas.app.resources.webapp.WebTokensResource.generate]", "registerMBean"));
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:name=io.dropwizard.jetty.MutableServletContextHandler.1xx-responses]", "registerMBean"));
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:name=io.dropwizard.jetty.MutableServletContextHandler.2xx-responses]", "registerMBean"));
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:name=io.dropwizard.jetty.MutableServletContextHandler.3xx-responses]", "registerMBean"));
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:name=io.dropwizard.jetty.MutableServletContextHandler.4xx-responses]", "registerMBean"));
+        policy.addViolationsToPolicy();
+        policy.collapsePolicy();
+        
+        StringWriter sw = new StringWriter();
+        policy.writePolicy(sw);
+        JSONObject outPolicy = new JSONObject(sw.toString());
+        
+        assertEquals(outPolicy.length(), 1);
+        assertTrue(outPolicy.has("file:/tmp/foo.jar"));
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").length(), 1);
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").has("javax.management.MBeanPermission"));
+        // FIXME: Verify collapse/matching of jmx permissions
+    }
+    
+    private static SecurityManagerPolicy createPolicy() {
+        SecurityManagerPolicy policy = new SecurityManagerPolicy();
+        policy.setPolicyConfig(new PolicyConfig(policy.getName(), new PieConfig()));
+        return policy;
     }
 }

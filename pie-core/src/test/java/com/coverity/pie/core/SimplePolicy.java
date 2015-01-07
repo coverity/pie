@@ -24,7 +24,7 @@ public class SimplePolicy extends Policy {
         }
         
         @Override
-        public StringCollapser getCollapser() {
+        public StringCollapser getCollapser(PolicyConfig policyConfig) {
             return NullStringCollapser.getInstance();
         }
 

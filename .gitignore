@@ -3,3 +3,5 @@
 .settings/
 target/
 test-output/
+/sig.keystore
+/pie-core/src/main/resources/coverity.crt

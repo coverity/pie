@@ -32,19 +32,88 @@ public class SecurityManagerPolicy extends Policy {
     }
     
     public boolean implies(CodeSource codeSource, Permission permission) {
-        String actions = permission.getActions();
-        if (actions == null) {
-            return implies(codeSource.getLocation().toString(), permission.getClass().getName(), permission.getName());
-        } else {
-            return implies(codeSource.getLocation().toString(), permission.getClass().getName(), permission.getName(), actions);            
-        }
+        return super.implies(concat(toString(codeSource), getPermissionFacts(permission)));
     }
     public void logViolation(CodeSource codeSource, Permission permission) {
+        super.logViolation(concat(toString(codeSource), getPermissionFacts(permission)));    
+    }
+    
+    private static String[] concat(String a, String[] b) {
+        String[] result = new String[b.length+1];
+        System.arraycopy(b, 0, result, 1, b.length);
+        result[0] = a;
+        return result;
+    }
+    
+    private static String[] getPermissionFacts(Permission permission) {
+        if (permission instanceof javax.management.MBeanPermission) {
+
+            String name = permission.getName(); 
+            String objectName = null;
+            String member = null;
+            String className = null;
+
+            int openingBracket = name.indexOf("[");
+            if (openingBracket == -1) {
+                objectName = "*:*";
+            } else {
+                if (!name.endsWith("]")) {
+                    // Illegal name format, fallback to default
+                    String actions = permission.getActions();
+                    if (actions == null) {
+                        return new String[] {
+                                permission.getClass().getName(),
+                                permission.getName()
+                        };
+                    } else {
+                        return new String[] {
+                                permission.getClass().getName(),
+                                permission.getName(),
+                                actions
+                        };
+                    }
+                } else {
+                    String on = name.substring(openingBracket + 1,
+                                               name.length() - 1);
+                    if (on.equals("")) {
+                        objectName = "*:*";
+                    } else { 
+                        objectName = on;
+                    }
+                }
+
+                name = name.substring(0, openingBracket);
+            }
+
+            // Parse member
+            int poundSign = name.indexOf("#");
+            if (poundSign == -1) {
+                member = "*";
+            } else {
+                String memberName = name.substring(poundSign + 1);
+                member = memberName;
+                name = name.substring(0, poundSign);
+            }
+
+            // Parse className
+            className = name;
+            
+            return new String[] { permission.getClass().getName(),
+                    className, member, objectName, permission.getActions() }; 
+        }
+        
         String actions = permission.getActions();
         if (actions == null) {
-            super.logViolation(codeSource.getLocation().toString(), permission.getClass().getName(), permission.getName());    
+            return new String[] {
+                    permission.getClass().getName(),
+                    permission.getName()
+            };
         } else {
-            super.logViolation(codeSource.getLocation().toString(), permission.getClass().getName(), permission.getName(), actions);
+            return new String[] {
+                    permission.getClass().getName(),
+                    permission.getName(),
+                    actions
+            };
         }
     }
     
@@ -172,6 +241,14 @@ public class SecurityManagerPolicy extends Policy {
                 next = FileParser.nextToken(";", tokens, next);
                 pos = next+1;
             }
+        }
+    }
+    
+    private static String toString(CodeSource codeSource) {
+        if (codeSource != null && codeSource.getLocation() != null) {
+            return codeSource.getLocation().toString();
+        } else {
+            return "<null>";
         }
     }
     

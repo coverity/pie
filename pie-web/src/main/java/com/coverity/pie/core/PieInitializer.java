@@ -30,7 +30,13 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
     private PolicyGeneratorRunnable policyGeneratorRunnable;
     private Thread policyGeneratorThread;
     
+    @Override
     public void onStartup(Set<Class<?>> classes, ServletContext cx) {
+        doSetup(classes, cx);
+        cx.addListener(this);
+    }
+    
+    public void doSetup(Set<Class<?>> classes, ServletContext cx) {
         
         pieConfig = new PieConfig();
         if (!pieConfig.isEnabled()) {
@@ -85,8 +91,6 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
             policyGeneratorThread = new Thread(policyGeneratorRunnable);
             policyGeneratorThread.start();
         }
-        
-        cx.addListener(this);
     }
 
     @Override

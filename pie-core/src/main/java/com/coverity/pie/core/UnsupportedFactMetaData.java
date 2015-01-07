@@ -12,7 +12,7 @@ public class UnsupportedFactMetaData implements FactMetaData {
     }
     
     @Override
-    public StringCollapser getCollapser() {
+    public StringCollapser getCollapser(PolicyConfig policyConfig) {
         throw new UnsupportedOperationException();
     }
 

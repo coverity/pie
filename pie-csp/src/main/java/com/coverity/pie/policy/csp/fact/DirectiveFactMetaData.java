@@ -3,6 +3,7 @@ package com.coverity.pie.policy.csp.fact;
 import com.coverity.pie.core.EqualityStringMatcher;
 import com.coverity.pie.core.FactMetaData;
 import com.coverity.pie.core.NullStringCollapser;
+import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.StringCollapser;
 
 public class DirectiveFactMetaData implements FactMetaData {
@@ -17,7 +18,7 @@ public class DirectiveFactMetaData implements FactMetaData {
     }
     
     @Override
-    public StringCollapser getCollapser() {
+    public StringCollapser getCollapser(PolicyConfig policyConfig) {
         return NullStringCollapser.getInstance();
     }
 

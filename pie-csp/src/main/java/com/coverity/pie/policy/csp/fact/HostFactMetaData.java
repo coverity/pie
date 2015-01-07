@@ -1,6 +1,7 @@
 package com.coverity.pie.policy.csp.fact;
 
 import com.coverity.pie.core.FactMetaData;
+import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.core.UnsupportedFactMetaData;
 import com.coverity.pie.util.collapser.HostnameCollapser;
@@ -19,7 +20,7 @@ public class HostFactMetaData implements FactMetaData {
     private final HostnameCollapser hostnameCollapser = new HostnameCollapser(2);
     
     @Override
-    public StringCollapser getCollapser() {
+    public StringCollapser getCollapser(PolicyConfig policyConfig) {
         return hostnameCollapser;
     }
 
