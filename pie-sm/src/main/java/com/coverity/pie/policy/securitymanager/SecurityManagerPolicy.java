@@ -45,63 +45,18 @@ public class SecurityManagerPolicy extends Policy {
         return result;
     }
     
-    private static String[] getPermissionFacts(Permission permission) {
+    protected String[] getPermissionFacts(Permission permission) {
         if (permission instanceof javax.management.MBeanPermission) {
-
-            String name = permission.getName(); 
-            String objectName = null;
-            String member = null;
-            String className = null;
-
-            int openingBracket = name.indexOf("[");
-            if (openingBracket == -1) {
-                objectName = "*:*";
-            } else {
-                if (!name.endsWith("]")) {
-                    // Illegal name format, fallback to default
-                    String actions = permission.getActions();
-                    if (actions == null) {
-                        return new String[] {
-                                permission.getClass().getName(),
-                                permission.getName()
-                        };
-                    } else {
-                        return new String[] {
-                                permission.getClass().getName(),
-                                permission.getName(),
-                                actions
-                        };
-                    }
-                } else {
-                    String on = name.substring(openingBracket + 1,
-                                               name.length() - 1);
-                    if (on.equals("")) {
-                        objectName = "*:*";
-                    } else { 
-                        objectName = on;
-                    }
-                }
-
-                name = name.substring(0, openingBracket);
-            }
-
-            // Parse member
-            int poundSign = name.indexOf("#");
-            if (poundSign == -1) {
-                member = "*";
-            } else {
-                String memberName = name.substring(poundSign + 1);
-                member = memberName;
-                name = name.substring(0, poundSign);
-            }
-
-            // Parse className
-            className = name;
-            
-            return new String[] { permission.getClass().getName(),
-                    className, member, objectName, permission.getActions() }; 
+            return parseMBeanPermissionFacts(permission);
+        }
+        if (permission instanceof java.net.SocketPermission) {
+            return parseSocketPermissionFacts(permission);
         }
         
+        return parseDefaultPermissionFacts(permission);
+    }
+    
+    private static String[] parseDefaultPermissionFacts(Permission permission) {
         String actions = permission.getActions();
         if (actions == null) {
             return new String[] {
@@ -115,6 +70,55 @@ public class SecurityManagerPolicy extends Policy {
                     actions
             };
         }
+    }
+    
+    private static String[] parseMBeanPermissionFacts(Permission permission) {
+
+        String name = permission.getName(); 
+        String objectName = null;
+        String member = null;
+        String className = null;
+
+        int openingBracket = name.indexOf("[");
+        if (openingBracket == -1) {
+            objectName = "*:*";
+        } else {
+            if (!name.endsWith("]")) {
+                // Illegal name format, fallback to default
+                return parseDefaultPermissionFacts(permission);
+            } else {
+                String on = name.substring(openingBracket + 1,
+                                           name.length() - 1);
+                if (on.equals("")) {
+                    objectName = "*:*";
+                } else { 
+                    objectName = on;
+                }
+            }
+
+            name = name.substring(0, openingBracket);
+        }
+
+        // Parse member
+        int poundSign = name.indexOf("#");
+        if (poundSign == -1) {
+            member = "*";
+        } else {
+            String memberName = name.substring(poundSign + 1);
+            member = memberName;
+            name = name.substring(0, poundSign);
+        }
+
+        // Parse className
+        className = name;
+        
+        return new String[] { permission.getClass().getName(),
+                className, member, objectName, permission.getActions() };
+    }
+    
+    private static String[] parseSocketPermissionFacts(Permission permission) {
+        // Return actions before name
+        return new String[] { permission.getClass().getName(), permission.getActions(), permission.getName() };
     }
     
     public void writeJavaPolicy(Writer writer) throws IOException {

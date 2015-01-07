@@ -6,12 +6,12 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.json.JSONObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.coverity.pie.core.PieConfig;
 import com.coverity.pie.core.PolicyConfig;
-import com.coverity.pie.thirdparty.json.JSONObject;
 
 public class CspPolicyTest {
     @Test

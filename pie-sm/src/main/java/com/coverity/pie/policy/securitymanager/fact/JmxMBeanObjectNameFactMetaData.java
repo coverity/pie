@@ -1,6 +1,8 @@
 package com.coverity.pie.policy.securitymanager.fact;
 
-import com.coverity.pie.core.EqualityStringMatcher;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+
 import com.coverity.pie.core.FactMetaData;
 import com.coverity.pie.core.NullStringCollapser;
 import com.coverity.pie.core.PolicyConfig;
@@ -19,14 +21,18 @@ public class JmxMBeanObjectNameFactMetaData implements FactMetaData {
     
     @Override
     public StringCollapser getCollapser(PolicyConfig policyConfig) {
-        // FIXME: Object name matching and collapsing is non-trivial
-        // https://docs.oracle.com/javase/7/docs/api/javax/management/ObjectName.html
+        // FIXME: ObjectName spec is quite general, so deciding how to collapse is non-trivial
         return NullStringCollapser.getInstance();
     }
 
     @Override
     public boolean matches(String matcher, String matchee) {
-        return EqualityStringMatcher.getInstance().matches(matcher, matchee);
+        try {
+            return new ObjectName(matcher).apply(new ObjectName(matchee));
+        } catch (MalformedObjectNameException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override

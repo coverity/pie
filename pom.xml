@@ -27,25 +27,6 @@
                     <target>1.7</target>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jarsigner-plugin</artifactId>
-                <version>1.3.2</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <alias>coverity</alias>
-                    <keystore>../sig.keystore</keystore>
-                    <storepass>password</storepass>
-                    <keypass>password</keypass>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 

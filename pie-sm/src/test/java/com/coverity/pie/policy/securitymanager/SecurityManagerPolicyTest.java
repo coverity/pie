@@ -16,11 +16,11 @@ import java.security.CodeSource;
 import java.security.Permission;
 import java.security.cert.Certificate;
 
+import org.json.JSONObject;
 import org.testng.annotations.Test;
 
 import com.coverity.pie.core.PieConfig;
 import com.coverity.pie.core.PolicyConfig;
-import com.coverity.pie.thirdparty.json.JSONObject;
 import com.coverity.pie.util.IOUtil;
 
 public class SecurityManagerPolicyTest {

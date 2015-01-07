@@ -52,44 +52,6 @@
                     <target>1.7</target>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>jarjar-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jarjar</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>org.reflections:reflections</include>
-                                <include>com.google.guava:guava</include>
-                                <include>org.javassist:javassist</include>
-                            </includes>
-                            <rules>
-                                <rule>
-                                    <pattern>org.reflections.**</pattern>
-                                    <result>com.coverity.pie.thirdparty.reflections.@1</result>
-                                </rule>
-                                <rule>
-                                    <pattern>javassist.**</pattern>
-                                    <result>com.coverity.pie.thirdparty.javassist.@1</result>
-                                </rule>
-                                <rule>
-                                    <pattern>com.google.common.**</pattern>
-                                    <result>com.coverity.pie.thirdparty.guava.@1</result>
-                                </rule>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- Even though this is in the parent, explicitly put it here so it runs after jarjar -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jarsigner-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
 

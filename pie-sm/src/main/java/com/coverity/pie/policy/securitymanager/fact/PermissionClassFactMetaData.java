@@ -32,6 +32,8 @@ public class PermissionClassFactMetaData implements FactMetaData {
         switch (fact) {
         case "java.io.FilePermission":
             return FileNameFactMetaData.getInstance();
+        case "java.net.SocketPermission":
+            return SocketActionFactMetaData.getInstance();
         case "java.util.PropertyPermission":
             return PropertyNameFactMetaData.getInstance();
         case "javax.management.MBeanPermission":
