@@ -1,4 +1,4 @@
-package com.coverity.pie.core;
+package com.coverity.pie.web;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -19,6 +19,8 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.HandlesTypes;
 
+import com.coverity.pie.core.PieConfig;
+import com.coverity.pie.core.PolicyEnforcer;
 import com.coverity.pie.util.IOUtil;
 
 @HandlesTypes(PolicyEnforcer.class)

@@ -1,4 +1,4 @@
-package com.coverity.pie.core;
+package com.coverity.pie.web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -10,6 +10,8 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+
+import com.coverity.pie.core.PolicyEnforcer;
 
 public class PieAdminFilter implements Filter {
 

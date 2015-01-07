@@ -1,4 +1,4 @@
-package com.coverity.pie.core;
+package com.coverity.pie.dropwizard;
 
 import io.dropwizard.Bundle;
 import io.dropwizard.setup.Bootstrap;
@@ -15,6 +15,9 @@ import org.eclipse.jetty.util.component.LifeCycle.Listener;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.util.ConfigurationBuilder;
+
+import com.coverity.pie.core.PolicyEnforcer;
+import com.coverity.pie.web.PieInitializer;
 
 public class PieBundle implements Bundle {
 
