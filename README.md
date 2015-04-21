@@ -6,7 +6,7 @@ Introduction
 
 PIE is a framework for creating and managing security policies within Java web applications. PIE is designed to be general, so exactly how you use PIE is up you, but it comes out-of-the-box with modules for the Java [SecurityManager](http://docs.oracle.com/javase/7/docs/api/java/lang/SecurityManager.html) (which can enforce a policy for certain JVM operations like file and socket manipulation) and [Content Security Policy](http://www.w3.org/TR/CSP/) (which helps to mitigate XSS).
 
-Like many security policy engines, PIE has two operating modes: a learing mode and an enforcement mode. In the learning mode, PIE internally logs any would-be violations of its security policies, and then updates the policy to whitelist the violation. Once learning mode is disabled, PIE strictly enforces the policy. What makes PIE unique is its generalized framework for understanding and simplifying security policies, making them easier for human consumption and verification, and making it more likely to identifying dynamically generated portions of policy requests (such as file paths or host names).
+Like many security policy engines, PIE has two operating modes: a learning mode and an enforcement mode. In the learning mode, PIE internally logs any would-be violations of its security policies, and then updates the policy to whitelist the violation. Once learning mode is disabled, PIE strictly enforces the policy. What makes PIE unique is its generalized framework for understanding and simplifying security policies, making them easier for human consumption and verification, and making it more likely to identifying dynamically generated portions of policy requests (such as file paths or host names).
 
 Below, you'll find some quick-start instructions to start using PIE, followed by a detailed description of its architecture including information on how to customize its behavior and extend PIE with policies tailored to your application.
 
@@ -96,7 +96,7 @@ Integrating PIE into SDLC and testing
 
 Generating a policy file while PIE is in learning mode requires actually using the application so that it can see permission requests. The best way to do this is to integrate PIE into your automated testing, and PIE provides a Maven plugin to help with this task.
 
-Since your application server for automated testing may not be on the same machine from which you are driving your tests, this plugin allows your local Maven process to fetch policy violations and act on them. The plugin can be configured to update a local policy file with those violations and/or fail the Maven build if any policy violatios are found. If the server is kept in learning mode, this allows individual tests to pass while enabling QA to recognize that the policy needs to be updated.
+Since your application server for automated testing may not be on the same machine from which you are driving your tests, this plugin allows your local Maven process to fetch policy violations and act on them. The plugin can be configured to update a local policy file with those violations and/or fail the Maven build if any policy violations are found. If the server is kept in learning mode, this allows individual tests to pass while enabling QA to recognize that the policy needs to be updated.
 
 To add the Maven plugin to your build, add the following to the build plugins section of your pom:
 
@@ -129,22 +129,22 @@ The Maven plugin has several additional options, so read the documentation for m
 Extending PIE
 =============
 
-The core of PIE provides a framework for initializing PIE modules and automatically simplifying and managing policy files. It is up to the modules themselves to provide classes which understand how to inteligently collapse (i.e. simplify) policy file entries (although there are several classes that can be extended to assist in simplification of policies which have typical patterns) and to hook into the relevant pieces of the application. The reader is advised to read this section, and then look at the SecurityManager and Content Security Policy modules as examples of how to extend PIE. Also in the repository is a sample project that defines its own PIE module, which you can use as an additional example.
+The core of PIE provides a framework for initializing PIE modules and automatically simplifying and managing policy files. It is up to the modules themselves to provide classes which understand how to intelligently collapse (i.e. simplify) policy file entries (although there are several classes that can be extended to assist in simplification of policies which have typical patterns) and to hook into the relevant pieces of the application. The reader is advised to read this section, and then look at the SecurityManager and Content Security Policy modules as examples of how to extend PIE. Also in the repository is an example project that defines its own PIE module, utilizing Spring Security method-security enforcement. This is also a great example to look at in order to determine how to write your own module.
 
-Archictecture
+Architecture
 -------------
 
-The most important responsibility for a PIE module is to define how it enforces its policy on the target application. The module will be passed a ServletContext on startup, but it is up to the module to hook into the application. The SecurityManager module achieves this by supplying a SecurityContext to the JVM, which is static and therefore ignores the ServletContext entirely. The CSP module simply adds a Filter to the ServletContext. The Spring Security example extracts the Spring ApplicationContext from the ServletContext and then adds itself as a hook in the ApplicationContext's bean factory so that it can proxy method invocations for all managed beans.
+The most important responsibility for a PIE module is to define how it enforces its policy on the target application, which is defined in an implementation of the PolicyEnforcer interface. This class will be passed a ServletContext on startup, but it is up to the module to determine how to then hook into the application. The SecurityManager module achieves this by supplying a SecurityContext to the JVM, which is static and therefore ignores the ServletContext entirely. The CSP module simply adds a Filter to the ServletContext. The Spring Security example application places itself (i.e. the PolicyEnforcer) into the ServletContext as an attribute, which is then used by the PieAccessDecisionManager (a bean which is additionally added to the Spring application context).
 
 Once a PIE module has inserted itself into an application, it can then delegate security decisions to the PIE Policy object. Abstractly, each policy decision is based on an array of "facts," where each fact is simply a String that has context-dependent semantics. The policy is then just a collection of these fact arrays that has been whitelisted.
 
-The default semantics provided by PIE is just literal String matching, with a no-op simplification engine. While this allows us to begin defining a policy for any context, it doesn't really provide much value. And although a PIE module would then immediately be functional, it is more useful, if a PIE module fulfill's its second role in defining semantics to the facts passed to the underlying Policy object.
+The default semantics provided by PIE is just literal String matching, with a no-op simplification engine. While this allows us to begin defining a policy for any context, it doesn't really provide much value. And although a PIE module would then immediately be functional, it is more useful if a PIE module fulfills its second role in defining semantics to the facts passed to the underlying Policy object.
 
 Concretely, this is done by extending the FactMetaData interface which has methods defining a) how to simplify the facts of that type, b) how to match a fact against one from the policy file (which is helpful in the case that you've chosen to introduce something like a regular language into your policy), and c) what the FactMetaData is for the next fact in the array).
 
 As an example, the SecurityManager receives its permission requests as an instance of the abstract Permission class. The enforcement engine serializes this into the following sequence of facts:
 1. The originating code source of the permission (e.g. WEB-INF/lib/foo.jar).
-2. The name of Permission instances concrete clas (e.g. java.io.FilePermission).
+2. The name of Permission instances concrete class (e.g. java.io.FilePermission).
 3. The "name" from the permission (the FilePermission class defines its getName() as returning the name of the file in question).
 4. The "action" from the permission (the FirePermission class defines its getActions() as returning read, write, and/or delete).
 
