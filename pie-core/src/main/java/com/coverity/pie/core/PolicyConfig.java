@@ -20,6 +20,10 @@ public class PolicyConfig {
     public boolean isReportOnlyMode() {
         return getBoolean("isReportOnlyMode", true);
     }
+
+    public boolean isCollapseEnabled() {
+        return getBoolean("isCollapseEnabled", true);
+    }
     
     public URL getPolicyFile() {
         String policyFile = getProperty("policyFile");

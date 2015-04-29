@@ -126,8 +126,13 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
     }
     
     private static void savePolicy(PolicyEnforcer policyEnforcer) {
-        policyEnforcer.getPolicy().addViolationsToPolicy();
-        policyEnforcer.getPolicy().collapsePolicy();
+        // Only add violations to the policy if it's in report-only mode
+        if (policyEnforcer.getPolicyConfig().isReportOnlyMode()) {
+            policyEnforcer.getPolicy().addViolationsToPolicy();
+        }
+        if (policyEnforcer.getPolicyConfig().isCollapseEnabled()) {
+            policyEnforcer.getPolicy().collapsePolicy();
+        }
         
         URL policyFile = policyEnforcer.getPolicyConfig().getPolicyFile();
         if (policyFile.getProtocol().equals("file")) {
