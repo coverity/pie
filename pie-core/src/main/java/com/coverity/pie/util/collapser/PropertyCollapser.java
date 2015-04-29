@@ -7,6 +7,9 @@ import java.util.Map;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.util.StringUtil;
 
+/**
+ * An implementation of the AbstractPathCollapser which collapses properties. For example, a.b.c.com would match *.c.com
+ */
 public class PropertyCollapser extends AbstractPathCollapser implements StringCollapser {
 
     public PropertyCollapser(int collapseThreshold) {

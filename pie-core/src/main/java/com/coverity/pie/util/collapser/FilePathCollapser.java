@@ -7,6 +7,10 @@ import java.util.Map;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.util.StringUtil;
 
+/**
+ * An implementation of the AbstractPathCollapser which collapses paths according to ant-style path matching; i.e.
+ * /a/b/* matches everything in the /a/b directory, whereas /a/b/- matches all descendents of /a/b
+ */
 public class FilePathCollapser extends AbstractPathCollapser implements StringCollapser {
 
     public FilePathCollapser(int collapseThreshold) {

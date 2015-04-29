@@ -23,6 +23,10 @@ import com.coverity.pie.core.PieConfig;
 import com.coverity.pie.core.PolicyEnforcer;
 import com.coverity.pie.util.IOUtil;
 
+/**
+ * An initializer that will automatically be picked up by Servlet 3.0 containers and which instantiates all the PIE
+ * modules on the classpath.
+ */
 @HandlesTypes(PolicyEnforcer.class)
 public class PieInitializer implements ServletContainerInitializer, ServletContextListener {
     

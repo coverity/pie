@@ -3,6 +3,9 @@ package com.coverity.pie.util;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A generic set of methods for parsing files; used in particular for parsing native Java SecurityManager policies.
+ */
 public class FileParser {
     public static String[] tokenize(String input, char[] specialChars) {
         List<String> tokens = new ArrayList<String>();

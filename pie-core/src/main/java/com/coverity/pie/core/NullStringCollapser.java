@@ -3,6 +3,9 @@ package com.coverity.pie.core;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Implementation of the StringCollapser interface which does not perform any collapsing.
+ */
 public class NullStringCollapser implements StringCollapser {
 
     private static final NullStringCollapser instance = new NullStringCollapser();

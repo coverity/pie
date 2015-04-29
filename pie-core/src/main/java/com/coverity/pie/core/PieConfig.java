@@ -9,6 +9,10 @@ import java.util.Properties;
 
 import com.coverity.pie.util.IOUtil;
 
+/**
+ * Configuration for PIE. This abstracts reading in the pieConfig.properties file and returning configuration
+ * directives.
+ */
 public class PieConfig {
 
     private final Properties properties = new Properties();

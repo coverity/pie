@@ -19,6 +19,9 @@ import com.coverity.pie.policy.securitymanager.fact.CodeSourceFactMetaData;
 import com.coverity.pie.util.FileParser;
 import com.coverity.pie.util.IOUtil;
 
+/**
+ * An implementation of the PIE policy for the Java SecurityManager.
+ */
 public class SecurityManagerPolicy extends Policy {
 
     @Override

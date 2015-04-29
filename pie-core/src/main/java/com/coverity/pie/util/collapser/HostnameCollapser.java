@@ -9,6 +9,9 @@ import java.util.regex.Pattern;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.util.StringUtil;
 
+/**
+ * An implementation of the AbstractPathCollapser which collapses hostnames. For example, a.b.c.com would match *.c.com
+ */
 public class HostnameCollapser extends AbstractPathCollapser implements StringCollapser {
 
     private static final Pattern HOSTNAME_PATTERN = Pattern.compile("(([^:]*)://)?([a-zA-Z0-9\\-\\*\\.]*)(:([0-9]*))?");

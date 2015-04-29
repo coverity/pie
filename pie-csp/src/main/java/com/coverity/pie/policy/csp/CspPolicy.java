@@ -14,6 +14,9 @@ import com.coverity.pie.core.FactMetaData;
 import com.coverity.pie.core.Policy;
 import com.coverity.pie.policy.csp.fact.UriFactMetaData;
 
+/**
+ * CSP implementation of a PIE security policy.
+ */
 public class CspPolicy extends Policy {
 
     private static final String[] DIRECTIVE_NAMES = new String[] { "connect-src", "font-src", "frame-src", "img-src", "media-src", "object-src", "script-src", "style-src" };

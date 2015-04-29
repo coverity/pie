@@ -4,6 +4,9 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+/**
+ * An abstraction of a security policy configuration properties file, with several common properties exposed as methods.
+ */
 public class PolicyConfig {
     private final String name;
     private final PieConfig pieConfig;

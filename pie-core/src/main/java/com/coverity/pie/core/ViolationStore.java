@@ -6,6 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A class used internally for storing security policy violations. It tracks the time of the violation
+ * (according to System.currentTimeMillis()) so that security policies can report any violations that have occurred
+ * in a given time frame.
+ */
 public class ViolationStore {
     private static class Violation {
         private final String[] facts;

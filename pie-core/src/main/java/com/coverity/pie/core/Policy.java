@@ -16,6 +16,11 @@ import org.json.JSONObject;
 
 import com.coverity.pie.util.IOUtil;
 
+/**
+ * An abstract representation of a security policy. This abstract class contains common methods, such as deciding
+ * whether or not an array of facts is implied (i.e. whitelisted) by the security policy, and methods for collapsing
+ * (i.e. simplifying) the security policy.
+ */
 public abstract class Policy {
     protected final static class FactTreeNode {
         private final String value;
@@ -37,7 +42,12 @@ public abstract class Policy {
     public void setPolicyConfig(PolicyConfig policyConfig) {
         this.policyConfig = policyConfig;
     }
-    
+
+    /**
+     * Decides if the concrete instance of facts is implied (i.e. whitelisted) by the security policy.
+     * @param facts The concrete instance of facts.
+     * @return Whether or not the instance of facts is allowed by the security policy.
+     */
     protected final boolean implies(String ... facts) {
         int factIndex = 0;
         FactTreeNode node = policyRoot;
@@ -62,7 +72,14 @@ public abstract class Policy {
         }
         return true;
     }
-    
+
+    /**
+     * This returns the collection of fact arrays which are allowed by this security policy, filtered by the facts
+     * passed in as arguments. NULL parameters in the fact array are treated as wildcards by the filter, and any
+     * non-NULL parameters are matched according to the policy's usual matching rules.
+     * @param facts The concrete fact instances used to filter the returned collection.
+     * @return A collection of fact arrays that are allowed by the policy, filtered by the methods input.
+     */
     protected final Collection<String[]> getGrants(String ... facts) {
         Collection<String[]> grants = new ArrayList<String[]>();
         appendGrants(facts, 0, new String[facts.length], policyRoot, getRootFactMetaData(), grants);
@@ -96,7 +113,10 @@ public abstract class Policy {
             }
         }
     }
-    
+
+    /**
+     * Updates the policy to whitelist all previously observed policy violations.
+     */
     public void addViolationsToPolicy() {
         final String[][] violations;
         synchronized(violationStore) {
@@ -108,7 +128,11 @@ public abstract class Policy {
             addGrant(violation);
         }
     }
-    
+
+    /**
+     * Updates the policy to include the concrete array of facts.
+     * @param facts The fact array which should be whitelisted by the policy.
+     */
     protected final void addGrant(String ... facts) {
         FactTreeNode node = policyRoot;
         FactMetaData metaData = getRootFactMetaData();
@@ -133,7 +157,10 @@ public abstract class Policy {
             metaData = targetMetaData;
         }
     }
-    
+
+    /**
+     * Performs policy simplification.
+     */
     public void collapsePolicy() {
          FactTreeNode root = collapseFactTreeNode(policyRoot.value, policyRoot.children, getRootFactMetaData());
          policyRoot = root;
@@ -161,8 +188,13 @@ public abstract class Policy {
         }
         return factTreeNode;
     }
-    
-    
+
+    /**
+     * Reads a PIE security policy from the reader argument, replacing any current policy data with what is read in.
+     *
+     * @param reader The reader with the raw policy content.
+     * @throws IOException
+     */
     public void parsePolicy(Reader reader) throws IOException {
         policyRoot = asFactTreeNode(null, new JSONObject(IOUtil.toString(reader)));
     }
@@ -174,7 +206,13 @@ public abstract class Policy {
         }
         return node;
     }
-    
+
+    /**
+     * Writes the raw PIE security policy to the writer object.
+     *
+     * @param writer The writer which will receive the raw security policy.
+     * @throws IOException
+     */
     public void writePolicy(Writer writer) throws IOException {
         writer.write("{\n");
         writePolicy(writer, policyRoot, 1);
@@ -229,19 +267,33 @@ public abstract class Policy {
             writer.write("\n");
         }
     }
-    
+
+    /**
+     * Appends the observed policy violation to this policy's list of violations.
+     * @param facts
+     */
     protected final void logViolation(String ... facts) {
         synchronized (violationStore) {
             violationStore.logViolation(facts);
         }
     }
-    
+
+    /**
+     * Returns all distinct violations previously observed by this policy (as passed into logViolation()).
+     * @return
+     */
     public String[][] getViolations() {
         synchronized (violationStore) {
             return violationStore.getViolations();
         }
     }
-    
+
+    /**
+     * Returns all distinct violations previously observed by this policy (as passed into logViolation()) that have
+     * occurred since the sinceTime argument (in Unix-time milliseconds).
+     * @param sinceTime
+     * @return
+     */
     public String[][] getViolations(long sinceTime) {
         synchronized (violationStore) {
             return violationStore.getViolations(sinceTime);

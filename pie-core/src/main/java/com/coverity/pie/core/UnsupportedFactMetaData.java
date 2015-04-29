@@ -1,5 +1,9 @@
 package com.coverity.pie.core;
 
+/**
+ * An implementation of FactMetaData which can be used by security policy implementations when for fact instances they
+ * do not expect or do not support.
+ */
 public class UnsupportedFactMetaData implements FactMetaData {
 
     private static final UnsupportedFactMetaData instance = new UnsupportedFactMetaData();

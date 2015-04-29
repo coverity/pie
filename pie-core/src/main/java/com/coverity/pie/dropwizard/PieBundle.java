@@ -19,6 +19,16 @@ import org.reflections.util.ConfigurationBuilder;
 import com.coverity.pie.core.PolicyEnforcer;
 import com.coverity.pie.web.PieInitializer;
 
+/**
+ * A bundle for Dropwizard support. Include PIE in your Dropwizard application by including PieBundle in your
+ * application's initialization method. For example:
+ *
+ * @Override
+ * public void initialize(Bootstrap<HelloWorldConfiguration> bootstrap) {
+ *     bootstrap.addBundle(new PieBundle());
+ *     ...
+ * }
+ */
 public class PieBundle implements Bundle {
 
     @Override

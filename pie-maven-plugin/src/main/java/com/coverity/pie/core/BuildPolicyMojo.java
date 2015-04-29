@@ -27,21 +27,41 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
+/**
+ * The PIE Maven plugin, which fetches violations from a server and updates local policy files based on those
+ * violations.
+ */
 @Mojo( name = "build-policy", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST )
 public class BuildPolicyMojo extends AbstractMojo
 {
+    /**
+     * The base URL of the server.
+     */
     @Parameter( property = "serverUrl", required = true)
     private URL serverUrl;
-    
+
+    /**
+     * The path to the PIE configuration.
+     */
     @Parameter( property = "pieConfig", required = true)
     private File pieConfig;
-    
+
+    /**
+     * A parameter which can be used to only fetch violations starting from a certain timestamp (generally the start
+     * of the Maven build).
+     */
     @Parameter( property = "startTime", required = false)
     private String startTime;
-    
+
+    /**
+     * A parameter which can be used to clear the set of violations from the server.
+     */
     @Parameter( defaultValue = "false", property = "clearViolations", required = true)
     private boolean clearViolations;
-    
+
+    /**
+     * A parameter which informs the plugin where to look for PIE modules.
+     */
     @Parameter( property = "pluginRoots", required = true)
     private List<File> pluginRoots;
 

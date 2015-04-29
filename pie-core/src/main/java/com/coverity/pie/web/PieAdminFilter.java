@@ -13,6 +13,10 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.coverity.pie.core.PolicyEnforcer;
 
+/**
+ * A servlet filter which provides an endpoint to retrieve policy violations. At this point its intended use is to
+ * facilitate the Maven plugin.
+ */
 public class PieAdminFilter implements Filter {
 
     private final PieInitializer pieInitializer;

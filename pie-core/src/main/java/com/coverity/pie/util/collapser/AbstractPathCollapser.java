@@ -6,7 +6,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * An abstraction of common behavior for collapsers which collapse paths based on "path" semantics. Such examples
+ * include file system paths (e.g. /tmp/foo/bar), URLs (e.g. http://foo.bar.com/a/b/c), hostnames (e.g. foo.bar.com),
+ * and system properties (e.g. foo.baz.bar).
+ */
 public abstract class AbstractPathCollapser {
+
+    /**
+     * A data-container class for parsed abstraction of paths. Paths may contain non-path components (in a URL, this
+     * might include the host name and port) and the path components.
+     */
     protected final static class PathName {
         private final String[] pathComponents;
         private final String[] nonPathComponents;
@@ -30,7 +40,16 @@ public abstract class AbstractPathCollapser {
     private final String dirStar;
     private final int collapseThreshold;
     private final int minDepth;
-    
+
+    /**
+     * @param fileStar The wildcard which represents matching all children in the current path, but not descendants of
+     *                 children.
+     * @param dirStar The wildcard which represents matching all descendants in the current path.
+     * @param collapseThreshold The minimum number of children that must show up in the same level of path before the
+     *                          collapser decides to combine all children using the fileStar or dirStar wildcard.
+     * @param minDepth The minimum depth to which collapsing will be performed. For example, if minDepth is 2, then
+     *                 the collapser will not collapse /a/* and /b/* into /-
+     */
     protected AbstractPathCollapser(String fileStar, String dirStar, int collapseThreshold, int minDepth) {
         this.fileStar = fileStar;
         this.dirStar = dirStar;
@@ -61,7 +80,12 @@ public abstract class AbstractPathCollapser {
         }
         return true;
     }
-    
+
+    /**
+     * The primary interface for using the AbstractPathCollapser
+     * @param paths The paths to be collapsed.
+     * @return The collapsed output.
+     */
     protected final <T> Map<PathName, Collection<T>> collapsePaths(Map<PathName, Collection<T>> paths) {
         
         boolean anyCollapsed = true;
@@ -192,7 +216,13 @@ public abstract class AbstractPathCollapser {
         
         return paths;
     }
-    
+
+    /**
+     * A utility method to decide if the path-spec matches another. For convenience, it is exposed to subclasses.
+     * @param a The matcher.
+     * @param b The matchee.
+     * @return True if all paths mathched by b would also be matched by a.
+     */
     protected boolean arePathsMatch(String[] a, String[] b) {
         // If both end with dirStar or fileStar...
         if ((a[a.length-1].equals(fileStar) || a[a.length-1].equals(dirStar))
@@ -221,6 +251,13 @@ public abstract class AbstractPathCollapser {
         }
     }
 
+    /**
+     * A utility method to decide if a PathName instance matches another. For convenience, it is exposed to subclasses.
+     * @param matcher The matcher.
+     * @param matchee The matchee.
+     * @return True if the non-path components are identically equal and anything matched by the matcher's path
+     * components would also match the matchee's path components.
+     */
     protected boolean pathNameMatches(PathName matcher, PathName matchee) {
         if (!nullEquals(matcher.getNonPathComponents(), matchee.getNonPathComponents())) {
             return false;

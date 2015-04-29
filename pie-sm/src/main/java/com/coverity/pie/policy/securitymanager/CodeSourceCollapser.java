@@ -8,6 +8,11 @@ import java.util.Map;
 
 import com.coverity.pie.core.StringCollapser;
 
+/**
+ * A collapser which collapses "CodeBase" strings for the Java SecurityManager. It will collapse all CodeBases within
+ * an applications lib directory (into a single "/lib/-" fact) and all class files within the classes directory
+ * (into a single "/classes/-" fact).
+ */
 public class CodeSourceCollapser implements StringCollapser {
     
     private static final CodeSourceCollapser instance = new CodeSourceCollapser();

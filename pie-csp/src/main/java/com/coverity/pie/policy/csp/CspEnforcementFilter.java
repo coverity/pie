@@ -19,6 +19,9 @@ import org.json.JSONObject;
 import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.util.IOUtil;
 
+/**
+ * A servlet filter which adds the CSP directive to the response and which handles violation reports send by the agent.
+ */
 public class CspEnforcementFilter implements Filter {
 
     private static final String REPORT_URI = "/a379568856ef23aPIE19bc95ce4e2f7fd2b";

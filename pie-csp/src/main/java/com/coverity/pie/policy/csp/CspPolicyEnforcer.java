@@ -8,6 +8,9 @@ import com.coverity.pie.core.Policy;
 import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.PolicyEnforcer;
 
+/**
+ * CSP implementation of a PIE policy enforcer.
+ */
 public class CspPolicyEnforcer implements PolicyEnforcer {
 
     private CspPolicy policy;

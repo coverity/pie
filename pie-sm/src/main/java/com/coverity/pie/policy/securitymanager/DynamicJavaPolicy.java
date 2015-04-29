@@ -20,6 +20,10 @@ import java.util.Collection;
 import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.util.IOUtil;
 
+/**
+ * An implementation of the Java SecurityManager Policy class, which delegates policy decisions to the PIE policy.
+ * Whitelists permissions for PIE classes based on their certificate signature.
+ */
 public class DynamicJavaPolicy extends Policy {
     
     private final Collection<Policy> parentPolicies;

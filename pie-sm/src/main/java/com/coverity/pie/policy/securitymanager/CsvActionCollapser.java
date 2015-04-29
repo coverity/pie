@@ -9,6 +9,9 @@ import java.util.Map;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.util.StringUtil;
 
+/**
+ * A collapser which always collapses all facts into a single fact with comma-separated values (alphabetically ordered).
+ */
 public class CsvActionCollapser implements StringCollapser {
 
     private static final CsvActionCollapser instance = new CsvActionCollapser();

@@ -7,7 +7,9 @@ import java.util.Map;
 import com.coverity.pie.core.StringCollapser;
 import com.coverity.pie.util.StringUtil;
 
-
+/**
+ * An implementation of the AbstractPathCollapser which collapses URLs for CSP policies.
+ */
 public class UriCspDirectiveCollapser extends AbstractPathCollapser implements StringCollapser {
     public UriCspDirectiveCollapser(int collapseThreshold) {
         super("*", "**", collapseThreshold, 2);

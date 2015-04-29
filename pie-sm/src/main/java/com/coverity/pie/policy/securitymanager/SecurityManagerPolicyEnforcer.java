@@ -7,6 +7,9 @@ import com.coverity.pie.core.Policy;
 import com.coverity.pie.core.PolicyConfig;
 import com.coverity.pie.core.PolicyEnforcer;
 
+/**
+ * An implementation of the PolicyEnforcer class for the Java SecurityManager.
+ */
 public class SecurityManagerPolicyEnforcer implements PolicyEnforcer {
     
     private static final Object MUTEX = new Object();
