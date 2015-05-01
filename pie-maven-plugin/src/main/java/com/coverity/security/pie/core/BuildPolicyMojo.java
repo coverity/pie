@@ -175,12 +175,16 @@ public class BuildPolicyMojo extends AbstractMojo
                     if (lines.length > 0) {
                         hadViolations = true;
                     }
-                    for (String line : lines) {
-                        policy.logViolation(line.split("\t"));
+                    if (pieConfig.isEnabled() && pieConfig.isRegenerateOnShutdown()) {
+                        for (String line : lines) {
+                            policy.logViolation(line.split("\t"));
+                        }
+                        policy.addViolationsToPolicy();
+                        if (policyConfig.isCollapseEnabled()) {
+                            policy.collapsePolicy();
+                        }
+                        policy.writePolicy(new FileWriter(policyFile));
                     }
-                    policy.addViolationsToPolicy();
-                    policy.collapsePolicy();
-                    policy.writePolicy(new FileWriter(policyFile));                
                 } catch (IOException e) {
                     throw new MojoExecutionException("Error handling server request.", e);
                 } finally {
