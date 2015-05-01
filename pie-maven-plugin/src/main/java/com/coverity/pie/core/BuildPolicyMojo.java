@@ -65,7 +65,12 @@ public class BuildPolicyMojo extends AbstractMojo
     @Parameter( property = "pluginRoots", required = true)
     private List<File> pluginRoots;
 
-    
+    /**
+     * Fail the build if there were violations
+     */
+    @Parameter ( defaultValue = "true", property = "failOnViolations", required = true)
+    private boolean failOnViolations;
+
     public void execute() throws MojoExecutionException, MojoFailureException
     {
         PieConfig pieConfig;
@@ -86,8 +91,9 @@ public class BuildPolicyMojo extends AbstractMojo
         
         final URL[] pluginJars = FileScanner.findJars(pluginRoots);
         final URLClassLoader pluginClassLoader = new URLClassLoader(pluginJars, Policy.class.getClassLoader());
-        
         CloseableHttpClient httpclient = null;
+        boolean hadViolations = false;
+
         try {
             httpclient = HttpClients.createDefault();
             
@@ -164,8 +170,12 @@ public class BuildPolicyMojo extends AbstractMojo
                     is = entity1.getContent();
                     String body = IOUtils.toString(is);
                     IOUtils.closeQuietly(is);
-                    
-                    for (String line : body.split("\n")) {
+
+                    final String[] lines = body.split("\n");
+                    if (lines.length > 0) {
+                        hadViolations = true;
+                    }
+                    for (String line : lines) {
                         policy.logViolation(line.split("\t"));
                     }
                     policy.addViolationsToPolicy();
@@ -181,6 +191,10 @@ public class BuildPolicyMojo extends AbstractMojo
         } finally {
             IOUtils.closeQuietly(pluginClassLoader);
             IOUtils.closeQuietly(httpclient);
+        }
+
+        if (failOnViolations && hadViolations) {
+            throw new MojoFailureException("PIE observed violations on the server.");
         }
     }
 }

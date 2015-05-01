@@ -4,102 +4,55 @@ Policy Instantiation and Enforcement (PIE)
 Introduction
 ------------
 
-PIE is a framework for creating and managing security policies within Java web applications. PIE is designed to be general, so exactly how you use PIE is up you, but it comes out-of-the-box with modules for the Java [SecurityManager](http://docs.oracle.com/javase/7/docs/api/java/lang/SecurityManager.html) (which can enforce a policy for certain JVM operations like file and socket manipulation) and [Content Security Policy](http://www.w3.org/TR/CSP/) (which helps to mitigate XSS).
-
-Like many security policy engines, PIE has two operating modes: a learning mode and an enforcement mode. In the learning mode, PIE internally logs any would-be violations of its security policies, and then updates the policy to whitelist the violation. Once learning mode is disabled, PIE strictly enforces the policy. What makes PIE unique is its generalized framework for understanding and simplifying security policies, making them easier for human consumption and verification, and making it more likely to identifying dynamically generated portions of policy requests (such as file paths or host names).
-
-Below, you'll find some quick-start instructions to start using PIE, followed by a detailed description of its architecture including information on how to customize its behavior and extend PIE with policies tailored to your application.
+PIE is a framework for creating and managing security policies for Java applications. Most of what follows describes how to use PIE to build a Java [SecurityManager](http://docs.oracle.com/javase/7/docs/api/java/lang/SecurityManager.html) policy specific to your application, which can help protect against many classes of attack. But PIE is also designed to be general, and out-of-the-box also supports generating a policy for CSP ([Content Security Policy](http://www.w3.org/TR/CSP/)), which helps to mitigate XSS. You can also check out the [advanced documentation](docs/ADVANCED.md) for tips on building custom PIE modules for your app.
 
 Quick-Start
 -----------
 
-### Including PIE in your project
+PIE has two primary modes of operation. In report-only mode, PIE will observe permission requests and update its policy so that those requests get whitelisted.
+![PIE Diagram](docs/pie-diagram.png)
 
-If you're using a Maven project, the easiest way to use PIE is to just add it as a dependency to your application.
+In enforcement mode, PIE reads in its security policies and applies them to any permission requests it sees.
 
-    <dependency>
-        <groupId>com.coverity.pie</groupId>
-        <artifactId>pie-core</artifactId>
-        <version>1.0</version>
-    </dependency>
+To quickly get started with PIE, just follow these steps:
+* Include PIE in your project.
+ * If you're using Tomcat, get the core and security-manager JARs and put them in Tomcat's lib directory.
+ * Or, if you're using Maven, just include the PIE security-manager module as a dependency:
     <dependency>
         <groupId>com.coverity.pie.plugin</groupId>
         <artifactId>pie-sm</artifactId>
         <version>1.0</version>
     </dependency>
-    <dependency>
-        <groupId>com.coverity.pie.plugin</groupId>
-        <artifactId>pie-csp</artifactId>
-        <version>1.0</version>
-    </dependency>
+* Start up your server, use the application, and run any end-to-end tests. Having good application coverage is key, since it lets PIE know what permissions your application will need.
+* Shutdown the server. Check out the policy file PIE created: securityManager.policy in the application's root directory. Tweak it if you'd like!
+* Create a configuration file for PIE telling it to run in enforcement mode: create a text file your application's root pathand create a pieConfig.properties file in your application's root directory with the following:
+    securityManager.isReportOnlyMode = false
+* Start up your server; your application is now protected! Easy as PIE!
 
-Notice how we included the SecurityManager (pie-sm) and Content Security Policy (pie-csp) plugins as separate dependencies. This allows you to pick-and-choose which PIE plugins to include in your application. If you're deploying your application to a Servlet 3.0 compatible container (like Tomcat or Jetty), PIE will automatically get picked up and utilized, so no further configuration is needed.
+Using PIE in Other Containers
+-----------------------------
 
-If you're not using Maven or you just don't want to include PIE in your pom, you can also copy the distributable JARs into your web containers common library directory. For example, if you're using Tomcat:
-
-    cp pie-core/target/pie-core-1.0-dist.jar $TOMCAT_HOME/lib
-    cp pie-sm/target/pie-sm-1.0.jar $TOMCAT_HOME/lib
-    cp pie-csp/target-pie-csp-1.0.jar $TOMCAT_HOME/lib
-
-Lastly, PIE has support for integrating into Dropwizard applications. In addition to adding the above dependencies to your pom, just add the PieBundle to your Application bootstrap:
-
-    public class HelloWorldApplication extends Application<HelloWorldConfiguration> {
-        ...
-        @Override
-        public void initialize(Bootstrap<HelloWorldConfiguration> bootstrap) {
-            bootstrap.addBundle(new com.coverity.pie.dropwizard.PieBundle());
-            ...
-        }
+PIE is easiest to use in a Servlet 3.0 container like Jetty or Tomcat (which automatically discover the PIE JARs and start it up on load). However, PIE uses standard Servlet interfaces, so you can load it in just about any container. For example, PIE has a bundle for Dropwizard support; besides including PIE as a dependency, all you need to due is include the PieBundle in your application's initialization method:
+    public void initialize(Bootstrap<HelloWorldConfiguration> bootstrap) {
+        bootstrap.addBundle(new PieBundle());
         ...
     }
-
-### Managing your policies
-Once you startup your app, you should immediately see an initial (empty) policy file get created by PIE. By default, its put in the current working directory of your application/container (e.g. $TOMCAT\_HOME); information on changing this path is in the configuration section below.
-
-By default, PIE will will simplify and save its policies every 30 seconds, as well as on the container shutdown (assuming the container is shutdown gracefully). If you want to manually adjust a policy, shutdown your application, make your changes to the file, and start it up again (it will read the policy file on startup).
-
-The semantics of a policy file depend on particular policy module, but the general schema is a tree-based whitelist of allowed "facts." Policy files are JSON formatted, making it easy to manually inspect and update as desired. For example:
-
-    $ cat securityManager.policy 
-    {
-       "file:/opt/tomcat/webapps/pebble-2.6.4/WEB-INF/lib/-": {
-          "java.io.FilePermission": {
-             "/home/tomcat/pebble": {
-                "read,write": {}
-             },
-             "/home/tomcat/pebble/realm": {
-                "read,write": {}
-             },
-             "/home/tomcat/pebble/realm/username.properties": {
-                "read,write": {}
-             },
-             "/home/tomcat/tomcats/pebble/temp/*": {
-                "read": {}
-             },
-             "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/xerces.properties": {
-                "read": {}
-             }
-          }
-          ...
-       }
-    }
-
-In this case, we see that the policy grants permission to read and write the `/home/tomcat/pebble/realm/username.properties` file. We may realize that we really want to grant permission to all files in the directory instead. We could either make the application access another file in this directory (at which point PIE would extrapolate a policy which whitelists access to all files in the directory), or manually update this file.
+ 
+Do you use some other container that PIE doesn't support? Open up a feature request, or even better, submit a pull request!
 
 
-### Configuring PIE
-On startup, PIE looks for a file named pieConfig.properties either in the current working directory, or in the root of the classpath. You can put values in this file to customize the behavior of PIE or its modules (including disabling PIE and any of its modules). 
+Using the Maven Plugin
+----------------------
 
+PIE comes with a Maven plugin which helps you keep your security policies up-to-date and detect issues related to overly-restrictive policies early in the software development lifecycle.
+![PIE Maven Diagrom](docs/pie-maven-diagram.png)
 
-Integrating PIE into SDLC and testing
--------------------------------------
+1. Activate your usual end-to-end testing build. This may call out to a service like SeleniumGrid, or use a browser locally.
+2. Your testing build exercises a deployed instance of your web application, which should be running PIE in a report-only mode.
+3. After the test is complete, the PIE Maven plugin fetches all policy violations that occurred from the deployed server.
+4. The plugin uses this information to generate an updated policy on your local machine, so you can inspect it, make updates, and redeploy the policy to your testing server. It will also (optionally) fail the Maven build so that you know an update needs to be made.
 
-Generating a policy file while PIE is in learning mode requires actually using the application so that it can see permission requests. The best way to do this is to integrate PIE into your automated testing, and PIE provides a Maven plugin to help with this task.
-
-Since your application server for automated testing may not be on the same machine from which you are driving your tests, this plugin allows your local Maven process to fetch policy violations and act on them. The plugin can be configured to update a local policy file with those violations and/or fail the Maven build if any policy violations are found. If the server is kept in learning mode, this allows individual tests to pass while enabling QA to recognize that the policy needs to be updated.
-
-To add the Maven plugin to your build, add the following to the build plugins section of your pom:
-
+To include PIE as part of your Maven build, include the plugin in your pom.xml:
     <plugin>
         <groupId>com.coverity.pie</groupId>
         <artifactId>pie-maven-plugin</artifactId>
@@ -107,66 +60,70 @@ To add the Maven plugin to your build, add the following to the build plugins se
         <configuration>
             <serverUrl>http://qaserver.myapp.example.com:8080/</serverUrl>
             <pieConfig>pieConfig.properties</pieConfig>
-            <pluginRoots>
-                <pluginRoot>${maven.repo.local}/com/coverity/pie/plugin</pluginRoot>
-            </pluginRoots>
+            <failOnViolations>true</failOnViolations>
         </configuration>
         <executions>
             <execution>
                 <goals>
                     <goal>build-policy</goal>
-                    <goal>check-violations</goal>
                 </goals>
             </execution>
         </executions>
     </plugin>
+When using PIE this way, make sure your server is configured to use PIE is report-only mode, and that the admin interface is enabled (see below).
 
-The two goals build-policy and check-violations will either update the local policies files with any violations learned during the build, or will fail the build if any violations were logged.
+The PIE plugin will run during the post-integration phase by default, at which time it will make a call to PIE's admin interface on the server (using the configured server URL) to fetch any policy violations that occurred during the Maven build. It will then update local policy files to add those violations to the whitelist, simplifying the policies if the pieConfig.properties file is configured to do so. If the failOnViolations configuration parameter is set to true (which is the default value), the plugin will also fail the Maven build if there were any violations.
 
-The Maven plugin has several additional options, so read the documentation for more info!
+Configuration Options
+---------------------
 
+PIE has lots of options to help you use it in the way that's most efficient for you. Here are the options you can include in pieConfig.properties, which you can put in either the root directory of your application, or in the root of your container's classpath (e.g. in Tomcat's lib directory).
+    # Global
+    pie.enabled = true # Whether or not PIE should be enabled
+    pie.regenerateOnShutdown = true # Whether or not PIE should update its policy files
+    pie.admininterface.enabled = false # Whether PIE's admin console should be enabled; this is mostly for PIE's Maven plugin
+    # SecurityManager
+    securityManager.enabled = true # Is the SecurityManager module enabled?
+    securityManager.policyPath = file:securityManager.policy # The path where the SecurityManager's policy file will be generated and read from
+    securityManager.isReportOnlyMode = true # Is the SecurityManager is report-only mode?
+    securityManager.isCollapseEnabled = true # Is policy simplification enabled?
+    securityManager.collapseLibDir = true # Should PIE collapse permissions for all the JARs in the webapp's lib directory?
 
-Extending PIE
-=============
+Policy Simplification
+---------------------
 
-The core of PIE provides a framework for initializing PIE modules and automatically simplifying and managing policy files. It is up to the modules themselves to provide classes which understand how to intelligently collapse (i.e. simplify) policy file entries (although there are several classes that can be extended to assist in simplification of policies which have typical patterns) and to hook into the relevant pieces of the application. The reader is advised to read this section, and then look at the SecurityManager and Content Security Policy modules as examples of how to extend PIE. Also in the repository is an example project that defines its own PIE module, utilizing Spring Security method-security enforcement. This is also a great example to look at in order to determine how to write your own module.
+One of PIE's most useful features is its ability to collapse and simplify your generated security policy. This not only makes it easier for a human to read, understand, and verify, but also allows PIE to make helpful generalizations. For example, consider the following generated policy:
+    "file:/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/WEB-INF/lib/commons-fileupload-1.0.jar": {
+       "java.io.FilePermission": {
+          "/home/ihaken/tomcats/pebble/temp/upload_00000000.tmp": {
+             "delete": {},
+             "read": {}
+          },
+          "/home/ihaken/tomcats/pebble/temp/upload_00000001.tmp": {
+             "delete": {},
+             "read": {}
+          },
+          "/home/ihaken/tomcats/pebble/temp/upload_00000002.tmp": {
+             "delete": {},
+             "read": {}
+          },
+          ...
+If you were to leave "securityManager.isCollapseEnabled = false" in your pieConfig.properties file, this policy would go on for hundreds of lines, and wouldn't even leave you with a correct policy, since it wouldn't allow for arbitrary files in `/home/ihaken/tomcats/pebble/temp` to be read and deleted. But with collapse enabled, PIE will output
+    "file:/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/WEB-INF/lib/commons-fileupload-1.0.jar": {
+       "java.io.FilePermission": {
+          "/home/ihaken/tomcats/pebble/temp/*": { "delete,read": {} }
+       },
+       ...
 
-Architecture
--------------
+PIE's heuristics for collapsing policies are written in a way that allows them to be context dependent. This means that PIE knows to collapse the file paths to "/home/ihaken/tomcats/pebble/temp/*" and to collapse the  "delete" and "read" directives into a single comma-separated-value list "delete,read". This modularity also allows you to tweak the conditions and threshold for collapsing directives. See the [advanced documentation](docs/ADVANCED.md) for more information.
 
-The most important responsibility for a PIE module is to define how it enforces its policy on the target application, which is defined in an implementation of the PolicyEnforcer interface. This class will be passed a ServletContext on startup, but it is up to the module to determine how to then hook into the application. The SecurityManager module achieves this by supplying a SecurityContext to the JVM, which is static and therefore ignores the ServletContext entirely. The CSP module simply adds a Filter to the ServletContext. The Spring Security example application places itself (i.e. the PolicyEnforcer) into the ServletContext as an attribute, which is then used by the PieAccessDecisionManager (a bean which is additionally added to the Spring application context).
+CSP, Custom Modules, and Advanced Configuration
+-----------------------------------------------
 
-Once a PIE module has inserted itself into an application, it can then delegate security decisions to the PIE Policy object. Abstractly, each policy decision is based on an array of "facts," where each fact is simply a String that has context-dependent semantics. The policy is then just a collection of these fact arrays that has been whitelisted.
+PIE is a general framework and can be used with more than just the Java SecurityManager. Out-of-the-box PIE supports generating policies for CSP, and includes an example (in the example-webapp directory) of generating a policy for Spring Security to define role-based access rules on DAO methods. See the [advanced documentation](docs/ADVANCED.md) for details!
 
-The default semantics provided by PIE is just literal String matching, with a no-op simplification engine. While this allows us to begin defining a policy for any context, it doesn't really provide much value. And although a PIE module would then immediately be functional, it is more useful if a PIE module fulfills its second role in defining semantics to the facts passed to the underlying Policy object.
+License
+-------
 
-Concretely, this is done by extending the FactMetaData interface which has methods defining a) how to simplify the facts of that type, b) how to match a fact against one from the policy file (which is helpful in the case that you've chosen to introduce something like a regular language into your policy), and c) what the FactMetaData is for the next fact in the array).
-
-As an example, the SecurityManager receives its permission requests as an instance of the abstract Permission class. The enforcement engine serializes this into the following sequence of facts:
-1. The originating code source of the permission (e.g. WEB-INF/lib/foo.jar).
-2. The name of Permission instances concrete class (e.g. java.io.FilePermission).
-3. The "name" from the permission (the FilePermission class defines its getName() as returning the name of the file in question).
-4. The "action" from the permission (the FirePermission class defines its getActions() as returning read, write, and/or delete).
-
-The SecurityManager module therefore defines the following FactMetaData classes:
-1. CodeSourceFactMetaData, which will collapse anything under WEB-INF/lib (and call it "WEB-INF/lib/-").
-2. PermissionClassFactMetaData, which doesn't enhance the default literal String matching, but which provides different FactMetaData classes depending on the particular fact on which it is operating. For example, given a "java.io.FilePermission" fact, it will return...
-3. FileNameFactMetaData, which has path-collapsing and path-matching logic relevant to file paths (e.g. it will instruct PIE to collapse "/foo/bar/a" and "/foo/bar/b" to just "/foo/bar/\*").
-4. CsvActionFactMetaData, which will collapse "read" and "write" actions to "read,write."
-
-The specific implementation of FactMetaData will not generally effect the correctness of your PIE module, but will only effect its ability to simplify a policy (thus effecting how easy it is to manually inspect or verify the policy) and its ability to generalize and extrapolate (thus collapsing "/users/Alice.properties" and "/users/Bob.properties" to "/users/\*.properties") so that the policy isn't brittle.
-
-
-FAQ
-===
-
-### Q: I'm already using a SecurityManager and/or Content Security Policy header. Can I still use PIE?
-
-In general, yes, but the effect of chaining PIE with existing security policies depends on the particular module. The SecurityManager module is designed to check for an existing policy (such as Tomcat's default SecurityManager) and check delegate permission requests to it first. If that policy rejects the request, PIE operates on it as normal (by looking at its own policy and either logging violations in learning mode or rejecting the permission request in enforcement mode).
-
-The CSP module is implemented by adding a filter to the Servlet context, and so its behavior is likely to depend on how it gets ordered with any other CSP implementation; in general the CSP module should not be combined with any other CSP implementation.
-
-### Q: Can I just use PIE to log policy violations as a potential intrusion-detection system or as a way of manually building a policy independent of PIE?
-
-Sure! Just leave PIE in report-only mode, and you can either manually inspect the generated policy or you can turn up PIE's logging to DEBUG (see the configuration section) and act on the observed violations in your application logs.
+PIE is distributed under the terms of the [Simplified BSD license](https://en.wikipedia.org/wiki/Simplified_BSD_License#2-clause_license_.28.22Simplified_BSD_License.22_or_.22FreeBSD_License.22.29). See [LICENSE].
 
