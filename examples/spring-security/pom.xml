@@ -3,8 +3,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.coverity.pie.example</groupId>
-    <artifactId>example-webapp</artifactId>
+    <groupId>com.coverity.security.pie.example</groupId>
+    <artifactId>spring-security</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
@@ -16,7 +16,7 @@
     <dependencies>
         <!-- PIE -->
         <dependency>
-            <groupId>com.coverity.pie</groupId>
+            <groupId>com.coverity.security.pie</groupId>
             <artifactId>pie-core</artifactId>
             <version>${project.version}</version>
         </dependency>

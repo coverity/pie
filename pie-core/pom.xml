@@ -8,7 +8,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.coverity.pie</groupId>
+        <groupId>com.coverity.security.pie</groupId>
         <artifactId>pie</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>

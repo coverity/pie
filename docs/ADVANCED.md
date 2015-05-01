@@ -7,11 +7,13 @@ Including other PIE modules in your project
 -------------------------------------------
 
 If you included PIE as a Maven dependency of your project, then you can just include any additional PIE modules as dependencies:
+
     <dependency>
-        <groupId>com.coverity.pie.plugin</groupId>
+        <groupId>com.coverity.security.pie.plugin</groupId>
         <artifactId>pie-csp</artifactId>
         <version>1.0</version>
     </dependency>
+
 Alternatively, if you put PIE directly in your container's classpath (e.g. Tomcat's lib directory), then just add that module's JAR (along with the pie-core JAR) to the classpath.
 
 
@@ -66,18 +68,20 @@ The default semantics provided by PIE is just literal String matching, with a no
 Concretely, this is done by extending the FactMetaData interface which has methods defining a) how to simplify the facts of that type, b) how to match a fact against one from the policy file (which is helpful in the case that you've chosen to introduce something like a regular language into your policy), and c) what the FactMetaData is for the next fact in the array).
 
 As an example, the SecurityManager receives its permission requests as an instance of the abstract Permission class. The enforcement engine serializes this into the following sequence of facts:
-1. The originating code source of the permission (e.g. WEB-INF/lib/foo.jar).
+
+1. The originating code source of the permission (e.g. `WEB-INF/lib/foo.jar`).
 2. The name of Permission instances concrete class (e.g. java.io.FilePermission).
 3. The "name" from the permission (the FilePermission class defines its getName() as returning the name of the file in question).
 4. The "action" from the permission (the FirePermission class defines its getActions() as returning read, write, and/or delete).
 
 The SecurityManager module therefore defines the following FactMetaData classes:
-1. CodeSourceFactMetaData, which will collapse anything under WEB-INF/lib (and call it "WEB-INF/lib/-").
+
+1. CodeSourceFactMetaData, which will collapse anything under WEB-INF/lib (and call it `WEB-INF/lib/-`).
 2. PermissionClassFactMetaData, which doesn't enhance the default literal String matching, but which provides different FactMetaData classes depending on the particular fact on which it is operating. For example, given a "java.io.FilePermission" fact, it will return...
-3. FileNameFactMetaData, which has path-collapsing and path-matching logic relevant to file paths (e.g. it will instruct PIE to collapse "/foo/bar/a" and "/foo/bar/b" to just "/foo/bar/\*").
+3. FileNameFactMetaData, which has path-collapsing and path-matching logic relevant to file paths (e.g. it will instruct PIE to collapse `/foo/bar/a` and `/foo/bar/b` to just `/foo/bar/*`).
 4. CsvActionFactMetaData, which will collapse "read" and "write" actions to "read,write."
 
-The specific implementation of FactMetaData will not generally effect the correctness of your PIE module, but will only effect its ability to simplify a policy (thus effecting how easy it is to manually inspect or verify the policy) and its ability to generalize and extrapolate (thus collapsing "/users/Alice.properties" and "/users/Bob.properties" to "/users/\*.properties") so that the policy isn't brittle.
+The specific implementation of FactMetaData will not generally effect the correctness of your PIE module, but will only effect its ability to simplify a policy (thus effecting how easy it is to manually inspect or verify the policy) and its ability to generalize and extrapolate (thus collapsing `/users/Alice.properties` and `/users/Bob.properties` to `/users/*.properties`) so that the policy isn't brittle.
 
 
 FAQ

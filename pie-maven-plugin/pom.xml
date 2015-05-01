@@ -6,15 +6,14 @@
     <packaging>maven-plugin</packaging>
 
     <parent>
-        <groupId>com.coverity.pie</groupId>
+        <groupId>com.coverity.security.pie</groupId>
         <artifactId>pie</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
     <name>pie-maven-plugin Maven Plugin</name>
 
-    <!-- FIXME change it to the project's website -->
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/coverity/pie</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

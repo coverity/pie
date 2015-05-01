@@ -18,21 +18,23 @@ To quickly get started with PIE, just follow these steps:
 * Include PIE in your project.
  * If you're using Tomcat, get the core and security-manager JARs and put them in Tomcat's lib directory.
  * Or, if you're using Maven, just include the PIE security-manager module as a dependency:
+
     <dependency>
-        <groupId>com.coverity.pie.plugin</groupId>
+        <groupId>com.coverity.security.pie.plugin</groupId>
         <artifactId>pie-sm</artifactId>
         <version>1.0</version>
     </dependency>
+
 * Start up your server, use the application, and run any end-to-end tests. Having good application coverage is key, since it lets PIE know what permissions your application will need.
 * Shutdown the server. Check out the policy file PIE created: securityManager.policy in the application's root directory. Tweak it if you'd like!
-* Create a configuration file for PIE telling it to run in enforcement mode: create a text file your application's root pathand create a pieConfig.properties file in your application's root directory with the following:
-    securityManager.isReportOnlyMode = false
+* Create a configuration file for PIE telling it to run in enforcement mode: create a text file your application's root pathand create a pieConfig.properties file in your application's root directory with the following: `securityManager.isReportOnlyMode = false`
 * Start up your server; your application is now protected! Easy as PIE!
 
 Using PIE in Other Containers
 -----------------------------
 
 PIE is easiest to use in a Servlet 3.0 container like Jetty or Tomcat (which automatically discover the PIE JARs and start it up on load). However, PIE uses standard Servlet interfaces, so you can load it in just about any container. For example, PIE has a bundle for Dropwizard support; besides including PIE as a dependency, all you need to due is include the PieBundle in your application's initialization method:
+
     public void initialize(Bootstrap<HelloWorldConfiguration> bootstrap) {
         bootstrap.addBundle(new PieBundle());
         ...
@@ -45,7 +47,7 @@ Using the Maven Plugin
 ----------------------
 
 PIE comes with a Maven plugin which helps you keep your security policies up-to-date and detect issues related to overly-restrictive policies early in the software development lifecycle.
-![PIE Maven Diagrom](docs/pie-maven-diagram.png)
+![PIE Maven Diagram](docs/pie-maven-diagram.png)
 
 1. Activate your usual end-to-end testing build. This may call out to a service like SeleniumGrid, or use a browser locally.
 2. Your testing build exercises a deployed instance of your web application, which should be running PIE in a report-only mode.
@@ -53,8 +55,9 @@ PIE comes with a Maven plugin which helps you keep your security policies up-to-
 4. The plugin uses this information to generate an updated policy on your local machine, so you can inspect it, make updates, and redeploy the policy to your testing server. It will also (optionally) fail the Maven build so that you know an update needs to be made.
 
 To include PIE as part of your Maven build, include the plugin in your pom.xml:
+
     <plugin>
-        <groupId>com.coverity.pie</groupId>
+        <groupId>com.coverity.security.pie</groupId>
         <artifactId>pie-maven-plugin</artifactId>
         <version>1.0</version>
         <configuration>
@@ -70,6 +73,7 @@ To include PIE as part of your Maven build, include the plugin in your pom.xml:
             </execution>
         </executions>
     </plugin>
+
 When using PIE this way, make sure your server is configured to use PIE is report-only mode, and that the admin interface is enabled (see below).
 
 The PIE plugin will run during the post-integration phase by default, at which time it will make a call to PIE's admin interface on the server (using the configured server URL) to fetch any policy violations that occurred during the Maven build. It will then update local policy files to add those violations to the whitelist, simplifying the policies if the pieConfig.properties file is configured to do so. If the failOnViolations configuration parameter is set to true (which is the default value), the plugin will also fail the Maven build if there were any violations.
@@ -78,6 +82,7 @@ Configuration Options
 ---------------------
 
 PIE has lots of options to help you use it in the way that's most efficient for you. Here are the options you can include in pieConfig.properties, which you can put in either the root directory of your application, or in the root of your container's classpath (e.g. in Tomcat's lib directory).
+
     # Global
     pie.enabled = true # Whether or not PIE should be enabled
     pie.regenerateOnShutdown = true # Whether or not PIE should update its policy files
@@ -93,6 +98,7 @@ Policy Simplification
 ---------------------
 
 One of PIE's most useful features is its ability to collapse and simplify your generated security policy. This not only makes it easier for a human to read, understand, and verify, but also allows PIE to make helpful generalizations. For example, consider the following generated policy:
+
     "file:/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/WEB-INF/lib/commons-fileupload-1.0.jar": {
        "java.io.FilePermission": {
           "/home/ihaken/tomcats/pebble/temp/upload_00000000.tmp": {
@@ -108,14 +114,15 @@ One of PIE's most useful features is its ability to collapse and simplify your g
              "read": {}
           },
           ...
-If you were to leave "securityManager.isCollapseEnabled = false" in your pieConfig.properties file, this policy would go on for hundreds of lines, and wouldn't even leave you with a correct policy, since it wouldn't allow for arbitrary files in `/home/ihaken/tomcats/pebble/temp` to be read and deleted. But with collapse enabled, PIE will output
+If you were to leave `securityManager.isCollapseEnabled = false` in your pieConfig.properties file, this policy would go on for hundreds of lines, and wouldn't even leave you with a correct policy, since it wouldn't allow for arbitrary files in `/home/ihaken/tomcats/pebble/temp` to be read and deleted. But with collapse enabled, PIE will output
+
     "file:/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/WEB-INF/lib/commons-fileupload-1.0.jar": {
        "java.io.FilePermission": {
           "/home/ihaken/tomcats/pebble/temp/*": { "delete,read": {} }
        },
        ...
 
-PIE's heuristics for collapsing policies are written in a way that allows them to be context dependent. This means that PIE knows to collapse the file paths to "/home/ihaken/tomcats/pebble/temp/*" and to collapse the  "delete" and "read" directives into a single comma-separated-value list "delete,read". This modularity also allows you to tweak the conditions and threshold for collapsing directives. See the [advanced documentation](docs/ADVANCED.md) for more information.
+PIE's heuristics for collapsing policies are written in a way that allows them to be context dependent. This means that PIE knows to collapse the file paths to `/home/ihaken/tomcats/pebble/temp/*` and to collapse the "delete" and "read" directives into a single comma-separated-value list "delete,read". This modularity also allows you to tweak the conditions and threshold for collapsing directives. See the [advanced documentation](docs/ADVANCED.md) for more information.
 
 CSP, Custom Modules, and Advanced Configuration
 -----------------------------------------------
@@ -125,5 +132,5 @@ PIE is a general framework and can be used with more than just the Java Security
 License
 -------
 
-PIE is distributed under the terms of the [Simplified BSD license](https://en.wikipedia.org/wiki/Simplified_BSD_License#2-clause_license_.28.22Simplified_BSD_License.22_or_.22FreeBSD_License.22.29). See [LICENSE].
+PIE is distributed under the terms of the [Simplified BSD license](https://en.wikipedia.org/wiki/Simplified_BSD_License#2-clause_license_.28.22Simplified_BSD_License.22_or_.22FreeBSD_License.22.29). See [LICENSE](LICENSE).
 

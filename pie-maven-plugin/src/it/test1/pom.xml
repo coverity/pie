@@ -21,8 +21,9 @@
 					<serverUrl>http://localhost:18885/test1</serverUrl>
 					<pieConfig>@basedir@/src/test/resources/pieConfig.properties</pieConfig>
 					<pluginRoots>
-						<pluginRoot>@localRepository@/com/coverity/pie/plugin</pluginRoot>
+						<pluginRoot>@localRepository@/com/coverity/security/pie</pluginRoot>
 					</pluginRoots>
+					<failOnViolations>false</failOnViolations>
 				</configuration>
 				<executions>
 					<execution>

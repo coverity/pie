@@ -5,18 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>pie-sm</artifactId>
-    <groupId>com.coverity.pie.plugin</groupId>
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.coverity.pie</groupId>
+        <groupId>com.coverity.security.pie</groupId>
         <artifactId>pie</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
     <dependencies>
         <dependency>
-            <groupId>com.coverity.pie</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>pie-core</artifactId>
             <version>${project.version}</version>
         </dependency>
