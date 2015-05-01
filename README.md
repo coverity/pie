@@ -16,20 +16,18 @@ In enforcement mode, PIE reads in its security policies and applies them to any 
 
 To quickly get started with PIE, just follow these steps:
 * Include PIE in your project.
- * If you're using Tomcat, get the core and security-manager JARs and put them in Tomcat's lib directory.
- * Or, if you're using Maven, just include the PIE security-manager module as a dependency:
+ * If you're using Tomcat, get the [PIE core JAR](https://repo1.maven.org/maven2/com/coverity/security/pie/pie-core/1.0.0/pie-core-1.0.0-with-deps.jar) (this linked version is bundled with all dependencies) and the [PIE security-manager JAR](https://repo1.maven.org/maven2/com/coverity/security/pie/pie-sm/1.0.0/pie-sm-1.0.0.jar) and put them in Tomcat's lib directory.
+ * Or, if you're using Maven, just include the PIE security-manager module as a dependency in your application:
 
-   ````
-<dependency>
-    <groupId>com.coverity.security.pie.plugin</groupId>
-    <artifactId>pie-sm</artifactId>
-    <version>1.0</version>
-</dependency>
-   ````
+        <dependency>
+            <groupId>com.coverity.security.pie</groupId>
+            <artifactId>pie-sm</artifactId>
+            <version>1.0.0</version>
+        </dependency>
 
 * Start up your server, use the application, and run any end-to-end tests. Having good application coverage is key, since it lets PIE know what permissions your application will need.
 * Shutdown the server. Check out the policy file PIE created: securityManager.policy in the application's root directory. Tweak it if you'd like!
-* Create a configuration file for PIE telling it to run in enforcement mode: create a text file your application's root pathand create a pieConfig.properties file in your application's root directory with the following: `securityManager.isReportOnlyMode = false`
+* Create a configuration file for PIE telling it to run in enforcement mode: create a text file your container's working directory or classpath (e.g. Tomcat's lib directory) named pieConfig.properties with the following: `securityManager.isReportOnlyMode = false`
 * Start up your server; your application is now protected! Easy as PIE!
 
 Using PIE in Other Containers
@@ -49,10 +47,19 @@ Using the Maven Plugin
 ----------------------
 
 PIE comes with a Maven plugin which helps you keep your security policies up-to-date and detect issues related to overly-restrictive policies early in the software development lifecycle.
+
+Before you get started, make sure your application server is running in report-only mode, isn't generating its own new version of the policy, and has the PIE admin interface enabled. That is, make sure the server's pieConfig.properties has the following:
+
+    securityManager.isReportOnlyMode = true
+    pie.regenerateOnShutdown = false
+    pie.admininterface.enabled = true
+
+Now you can run your test build utilizing the PIE Maven plugin.
+
 ![PIE Maven Diagram](docs/pie-maven-diagram.png)
 
 1. Activate your usual end-to-end testing build. This may call out to a service like SeleniumGrid, or use a browser locally.
-2. Your testing build exercises a deployed instance of your web application, which should be running PIE in a report-only mode.
+2. Your testing build exercises a deployed instance of your web application, which, as indicated above, should be running PIE in a report-only mode.
 3. After the test is complete, the PIE Maven plugin fetches all policy violations that occurred from the deployed server.
 4. The plugin uses this information to generate an updated policy on your local machine, so you can inspect it, make updates, and redeploy the policy to your testing server. It will also (optionally) fail the Maven build so that you know an update needs to be made.
 
@@ -61,7 +68,7 @@ To include PIE as part of your Maven build, include the plugin in your pom.xml:
     <plugin>
         <groupId>com.coverity.security.pie</groupId>
         <artifactId>pie-maven-plugin</artifactId>
-        <version>1.0</version>
+        <version>1.0.0</version>
         <configuration>
             <serverUrl>http://qaserver.myapp.example.com:8080/</serverUrl>
             <pieConfig>pieConfig.properties</pieConfig>
@@ -134,5 +141,4 @@ PIE is a general framework and can be used with more than just the Java Security
 License
 -------
 
-PIE is distributed under the terms of the [Simplified BSD license](https://en.wikipedia.org/wiki/Simplified_BSD_License#2-clause_license_.28.22Simplified_BSD_License.22_or_.22FreeBSD_License.22.29). See [LICENSE](LICENSE).
-
+PIE is distributed under the terms of the [Simplified BSD License](https://en.wikipedia.org/wiki/Simplified_BSD_License#2-clause_license_.28.22Simplified_BSD_License.22_or_.22FreeBSD_License.22.29). See [LICENSE](LICENSE).

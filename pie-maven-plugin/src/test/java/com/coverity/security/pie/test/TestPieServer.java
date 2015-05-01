@@ -98,7 +98,7 @@ public class TestPieServer extends NanoHTTPD {
             startTime = Long.parseLong(decodedQueryParameters.get("startTime").get(0));
         }
         
-        StringBuilder response = new StringBuilder();
+        StringBuilder response = new StringBuilder("=== PIE REPORT ===\n");
         for (String[] permissionRequest : permissionRequests) {
             if (startTime != null && startTime > Long.parseLong(permissionRequest[0])) {
                 continue;

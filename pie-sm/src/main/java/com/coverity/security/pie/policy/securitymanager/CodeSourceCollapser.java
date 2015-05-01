@@ -55,10 +55,10 @@ public class CodeSourceCollapser implements StringCollapser {
     
     public static boolean pathMatches(String matcher, String matchee) {
         char lastChar = matcher.charAt(matcher.length()-1);
-        if (lastChar == '-') {
+        if (lastChar == '-' && matchee.length() >= matcher.length()) {
             return matchee.substring(0, matcher.length()-1).equals(matcher.substring(0,  matcher.length()-1));
         }
-        if (lastChar == '*') {
+        if (lastChar == '*' && matchee.length() >= matcher.length()) {
             if (!matchee.substring(0, matcher.length()-1).equals(matcher.substring(0,  matcher.length()-1))) {
                 return false;
             }

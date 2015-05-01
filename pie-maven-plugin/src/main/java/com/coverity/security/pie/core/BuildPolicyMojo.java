@@ -11,6 +11,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -26,6 +27,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.sonatype.aether.RepositorySystemSession;
 
 /**
  * The PIE Maven plugin, which fetches violations from a server and updates local policy files based on those
@@ -34,6 +36,12 @@ import org.apache.maven.plugins.annotations.Parameter;
 @Mojo( name = "build-policy", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST )
 public class BuildPolicyMojo extends AbstractMojo
 {
+    /**
+     * Used to extract local repository directory from Maven
+     */
+    @Parameter( defaultValue = "${repositorySystemSession}", readonly = true)
+    private RepositorySystemSession repoSession;
+
     /**
      * The base URL of the server.
      */
@@ -88,8 +96,13 @@ public class BuildPolicyMojo extends AbstractMojo
                 throw new MojoExecutionException("Invalid startTime", e);
             }
         }
+
+        if (pluginRoots.size() == 0) {
+            pluginRoots.add(new File(repoSession.getLocalRepository().getBasedir().getAbsolutePath() + "/com/coverity/security/pie"));
+        }
         
         final URL[] pluginJars = FileScanner.findJars(pluginRoots);
+        getLog().info("Found the following PIE jars: " + Arrays.toString(pluginJars));
         final URLClassLoader pluginClassLoader = new URLClassLoader(pluginJars, Policy.class.getClassLoader());
         CloseableHttpClient httpclient = null;
         boolean hadViolations = false;
@@ -105,13 +118,13 @@ public class BuildPolicyMojo extends AbstractMojo
                 } catch (InstantiationException | IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
-                getLog().info("Creating policy for " + policy.getName());
-                
+
                 PolicyConfig policyConfig = new PolicyConfig(policy.getName(), pieConfig);
                 if (!policyConfig.isEnabled()) {
                     continue;
                 }
                 policy.setPolicyConfig(policyConfig);
+                getLog().info("Creating policy for " + policy.getName());
                 
                 final URL policyUrl = policyConfig.getPolicyFile();
                 if (!policyUrl.getProtocol().equals("file")) {
@@ -172,12 +185,18 @@ public class BuildPolicyMojo extends AbstractMojo
                     IOUtils.closeQuietly(is);
 
                     final String[] lines = body.split("\n");
-                    if (lines.length > 0) {
+                    if (lines.length == 0 || !lines[0].equals("=== PIE REPORT ===")) {
+                        getLog().error("Invalid response from PIE server.");
+                        continue;
+                    }
+
+                    getLog().info("Found " + (lines.length-1) + " violations for " + policy.getName());
+                    if (lines.length > 1) {
                         hadViolations = true;
                     }
                     if (pieConfig.isEnabled() && pieConfig.isRegenerateOnShutdown()) {
-                        for (String line : lines) {
-                            policy.logViolation(line.split("\t"));
+                        for (int i = 1; i < lines.length; i++) {
+                            policy.logViolation(lines[i].split("\t"));
                         }
                         policy.addViolationsToPolicy();
                         if (policyConfig.isCollapseEnabled()) {

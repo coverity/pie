@@ -37,16 +37,18 @@ public class PieConfig {
         init(propertiesUrl);
     }
     private void init(URL propertiesUrl) {
-        InputStream is = null;
-        try {
-            is = propertiesUrl.openStream();
-            if (is != null) {
-                properties.load(is);
-                is.close();
+        if (propertiesUrl != null) {
+            InputStream is = null;
+            try {
+                is = propertiesUrl.openStream();
+                if (is != null) {
+                    properties.load(is);
+                    is.close();
+                }
+            } catch (IOException e) {
+                IOUtil.closeSilently(is);
+                throw new RuntimeException(e);
             }
-        } catch (IOException e) {
-            IOUtil.closeSilently(is);
-            throw new RuntimeException(e);
         }
         
         enabled = Boolean.parseBoolean(properties.getProperty("pie.enabled", "true"));

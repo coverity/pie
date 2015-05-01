@@ -1,19 +1,16 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>pie-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>The PIE Maven-plugin for rebuilding policies during a test/build, or validating the absence of policy violations on a test server.</description>
+    
     <parent>
         <groupId>com.coverity.security.pie</groupId>
         <artifactId>pie</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
-
-    <name>pie-maven-plugin Maven Plugin</name>
-
-    <url>https://github.com/coverity/pie</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -27,10 +24,10 @@
         </dependency>
         
         <dependency>
-		    <groupId>org.reflections</groupId>
-		    <artifactId>reflections</artifactId>
-		    <version>0.9.9</version>
-		</dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.9</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -42,12 +39,22 @@
             <version>2.4</version>
         </dependency>
 
-		<!-- Maven dependencies -->
+        <!-- Maven dependencies -->
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>2.0</version>
+            <version>3.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.sonatype.aether</groupId>
+            <artifactId>aether-api</artifactId>
+            <version>1.8</version>
+       </dependency>
+       <dependency>
+           <groupId>org.sonatype.aether</groupId>
+           <artifactId>aether-util</artifactId>
+           <version>1.8</version>
+       </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
@@ -60,7 +67,7 @@
             <version>3.0.8</version>
         </dependency>
 
-		<!-- Test -->
+        <!-- Test -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

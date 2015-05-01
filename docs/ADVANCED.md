@@ -96,5 +96,3 @@ The CSP module is implemented by adding a filter to the Servlet context, and so 
 ### Q: Can I just use PIE to log policy violations as a potential intrusion-detection system or as a way of manually building a policy independent of PIE?
 
 Sure! Just leave PIE in report-only mode, and you can either manually inspect the generated policy or you can turn up PIE's logging to DEBUG (see the configuration section) and act on the observed violations in your application logs.
-
-

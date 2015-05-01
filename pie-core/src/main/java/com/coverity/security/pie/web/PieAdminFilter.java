@@ -34,7 +34,11 @@ public class PieAdminFilter implements Filter {
             FilterChain chain) throws IOException, ServletException {
         if (request instanceof HttpServletRequest) {
             HttpServletRequest httpServletRequest = (HttpServletRequest)request;
-            if ("/c0bd580ddcb4666b1PIEec61812f3cdf305".equals(httpServletRequest.getRequestURI())) {
+            String path = null;
+            if (httpServletRequest.getRequestURI().length() >= httpServletRequest.getContextPath().length()) {
+                path = httpServletRequest.getRequestURI().substring(httpServletRequest.getContextPath().length());
+            }
+            if ("/c0bd580ddcb4666b1PIEec61812f3cdf305".equals(path)) {
                 
                 PolicyEnforcer policyEnforcer = pieInitializer.getPolicyEnforcer(httpServletRequest.getParameter("policyEnforcer"));
                 String startTimeStr = httpServletRequest.getParameter("startTime");
@@ -42,6 +46,7 @@ public class PieAdminFilter implements Filter {
                 
                 if (policyEnforcer != null) {
                     PrintWriter writer = response.getWriter();
+                    writer.write("=== PIE REPORT ===\n");
                     
                     String[][] violations;
                     if (startTime == null) {

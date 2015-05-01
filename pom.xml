@@ -1,11 +1,36 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.coverity.security.pie</groupId>
     <artifactId>pie</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>PIE (Policy Instantiation &amp; Enforcement) is a framework for creating and managing security policies for Java applications.</description>
+    <url>https://github.com/coverity/pie</url>
+
+    <licenses>
+      <license>
+        <name>Simplified BSD License</name>
+        <url>https://github.com/coverity/pie/blob/master/LICENSE</url>
+      </license>
+    </licenses>
+
+    <developers>
+      <developer>
+        <name>Ian Haken</name>
+        <email>ihaken@coverity.com</email>
+        <organization>Coverity</organization>
+        <organizationUrl>https://www.coverity.com/</organizationUrl>
+      </developer>
+    </developers>
+
+    <scm>
+      <connection>scm:git:https://github.com/coverity/pie.git</connection>
+      <developerConnection>scm:git:git@github.com:coverity/pie.git</developerConnection>
+      <url>https://github.com/coverity/pie</url>
+    </scm>
 
     <modules>
       <module>pie-core</module>
