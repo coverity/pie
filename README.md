@@ -24,7 +24,6 @@ To quickly get started with PIE, just follow these steps:
               <artifactId>pie-sm</artifactId>
               <version>1.0.0</version>
           </dependency>
-
 * Start up your server, use the application, and run any end-to-end tests. Having good application coverage is key, since it lets PIE know what permissions your application will need.
 * Shutdown the server. Check out the policy file PIE created: securityManager.policy in the application's root directory. Tweak it if you'd like!
 * Create a configuration file for PIE telling it to run in enforcement mode: create a text file your container's working directory or classpath (e.g. Tomcat's lib directory) named pieConfig.properties with the following: `securityManager.isReportOnlyMode = false`
