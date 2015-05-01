@@ -9,9 +9,9 @@ Including other PIE modules in your project
 If you included PIE as a Maven dependency of your project, then you can just include any additional PIE modules as dependencies:
 
     <dependency>
-        <groupId>com.coverity.security.pie.plugin</groupId>
+        <groupId>com.coverity.security.pie</groupId>
         <artifactId>pie-csp</artifactId>
-        <version>1.0</version>
+        <version>1.0.0</version>
     </dependency>
 
 Alternatively, if you put PIE directly in your container's classpath (e.g. Tomcat's lib directory), then just add that module's JAR (along with the pie-core JAR) to the classpath.
