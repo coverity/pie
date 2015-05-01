@@ -19,11 +19,11 @@ To quickly get started with PIE, just follow these steps:
  * If you're using Tomcat, get the [PIE core JAR](https://repo1.maven.org/maven2/com/coverity/security/pie/pie-core/1.0.0/pie-core-1.0.0-with-deps.jar) (this linked version is bundled with all dependencies) and the [PIE security-manager JAR](https://repo1.maven.org/maven2/com/coverity/security/pie/pie-sm/1.0.0/pie-sm-1.0.0.jar) and put them in Tomcat's lib directory.
  * Or, if you're using Maven, just include the PIE security-manager module as a dependency in your application:
 
-        <dependency>
-            <groupId>com.coverity.security.pie</groupId>
-            <artifactId>pie-sm</artifactId>
-            <version>1.0.0</version>
-        </dependency>
+          <dependency>
+              <groupId>com.coverity.security.pie</groupId>
+              <artifactId>pie-sm</artifactId>
+              <version>1.0.0</version>
+          </dependency>
 
 * Start up your server, use the application, and run any end-to-end tests. Having good application coverage is key, since it lets PIE know what permissions your application will need.
 * Shutdown the server. Check out the policy file PIE created: securityManager.policy in the application's root directory. Tweak it if you'd like!
