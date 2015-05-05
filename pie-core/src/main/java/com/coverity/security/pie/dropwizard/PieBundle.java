@@ -23,7 +23,7 @@ import com.coverity.security.pie.web.PieInitializer;
  * A bundle for Dropwizard support. Include PIE in your Dropwizard application by including PieBundle in your
  * application's initialization method. For example:
  *
- * @Override
+ * {@literal @}Override
  * public void initialize(Bootstrap<HelloWorldConfiguration> bootstrap) {
  *     bootstrap.addBundle(new PieBundle());
  *     ...

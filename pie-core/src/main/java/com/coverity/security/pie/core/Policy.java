@@ -11,6 +11,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.json.JSONObject;
 
@@ -35,6 +38,7 @@ public abstract class Policy {
     private PolicyConfig policyConfig = null;
     private FactTreeNode policyRoot = new FactTreeNode(null);
     private ViolationStore violationStore = new ViolationStore();
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     
     public abstract String getName();
     public abstract FactMetaData getRootFactMetaData();
@@ -52,25 +56,34 @@ public abstract class Policy {
         int factIndex = 0;
         FactTreeNode node = policyRoot;
         FactMetaData factMetaData = getRootFactMetaData();
-        
-        while (factIndex < facts.length) {
-            String fact = facts[factIndex];
-            FactTreeNode childNode = null;
-            for (FactTreeNode child : node.children) {
-                if (factMetaData.matches(child.value, fact)) {
-                    childNode = child;
-                    break;
+
+        Lock lock = null;
+        try {
+            lock = readWriteLock.readLock();
+            lock.lock();
+            while (factIndex < facts.length) {
+                String fact = facts[factIndex];
+                FactTreeNode childNode = null;
+                for (FactTreeNode child : node.children) {
+                    if (factMetaData.matches(child.value, fact)) {
+                        childNode = child;
+                        break;
+                    }
                 }
+                if (childNode == null) {
+                    return false;
+                }
+
+                factIndex += 1;
+                node = childNode;
+                factMetaData = factMetaData.getChildFactMetaData(node.value);
             }
-            if (childNode == null) {
-                return false;
+            return true;
+        } finally {
+            if (lock != null) {
+                lock.unlock();
             }
-            
-            factIndex += 1;
-            node = childNode;
-            factMetaData = factMetaData.getChildFactMetaData(node.value);
         }
-        return true;
     }
 
     /**
@@ -136,25 +149,35 @@ public abstract class Policy {
     protected final void addGrant(String ... facts) {
         FactTreeNode node = policyRoot;
         FactMetaData metaData = getRootFactMetaData();
-        
-        for (int i = 0; i < facts.length; i++) {
-            FactTreeNode targetChild = null;
-            FactMetaData targetMetaData = null;
-            
-            for (FactTreeNode child : node.children) {
-                if (metaData.matches(child.value, facts[i])) {
-                    targetChild = child;
-                    targetMetaData = metaData.getChildFactMetaData(child.value);
-                    break;
+
+        Lock lock = null;
+        try {
+            lock = readWriteLock.writeLock();
+            lock.lock();
+
+            for (int i = 0; i < facts.length; i++) {
+                FactTreeNode targetChild = null;
+                FactMetaData targetMetaData = null;
+
+                for (FactTreeNode child : node.children) {
+                    if (metaData.matches(child.value, facts[i])) {
+                        targetChild = child;
+                        targetMetaData = metaData.getChildFactMetaData(child.value);
+                        break;
+                    }
                 }
+                if (targetChild == null) {
+                    targetChild = new FactTreeNode(facts[i]);
+                    targetMetaData = metaData.getChildFactMetaData(facts[i]);
+                    node.children.add(targetChild);
+                }
+                node = targetChild;
+                metaData = targetMetaData;
             }
-            if (targetChild == null) {
-                targetChild = new FactTreeNode(facts[i]);
-                targetMetaData = metaData.getChildFactMetaData(facts[i]);
-                node.children.add(targetChild);
+        } finally {
+            if (lock != null) {
+                lock.unlock();
             }
-            node = targetChild;
-            metaData = targetMetaData;
         }
     }
 
@@ -248,7 +271,7 @@ public abstract class Policy {
                 writer.write("   ");
             }
             writer.write("\"");
-            writer.write(child.value.replaceAll("\\\\", "\\\\").replaceAll("\"", "\\\""));
+            writer.write(child.value.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\\\""));
             writer.write("\": {");
             if (child.children.size() == 0) {
                 writer.write ("}");
@@ -279,8 +302,7 @@ public abstract class Policy {
     }
 
     /**
-     * Returns all distinct violations previously observed by this policy (as passed into logViolation()).
-     * @return
+     * @return Returns all distinct violations previously observed by this policy (as passed into logViolation()).
      */
     public String[][] getViolations() {
         synchronized (violationStore) {
@@ -289,10 +311,9 @@ public abstract class Policy {
     }
 
     /**
-     * Returns all distinct violations previously observed by this policy (as passed into logViolation()) that have
+     * @param sinceTime A filter indicating the minimum time for which observed violations will be returned.
+     * @return Returns all distinct violations previously observed by this policy (as passed into logViolation()) that have
      * occurred since the sinceTime argument (in Unix-time milliseconds).
-     * @param sinceTime
-     * @return
      */
     public String[][] getViolations(long sinceTime) {
         synchronized (violationStore) {

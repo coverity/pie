@@ -8,8 +8,6 @@ import javax.servlet.ServletContext;
  * based on recorded policy violations. Most implementations should be backed by a PolicyBuilder
  * implementation and delegate requests to save, update, and record violations to that builder.
  * An abstract class which provides that delegation is available as AbstractPolicyEnforcer.
- *  
- * @seealso AbstractPolicyEnforcer
  * 
  */
 public interface PolicyEnforcer {

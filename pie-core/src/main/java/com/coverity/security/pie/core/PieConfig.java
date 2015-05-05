@@ -22,21 +22,25 @@ public class PieConfig {
     private boolean adminInterfaceEnabled;
     
     public PieConfig() {
+        loadProps(this.getClass().getClassLoader().getResource("pieConfig.default.properties"));
         File propFile = new File("pieConfig.properties");
         if (propFile.exists()) {
             try {
-                init(propFile.toURI().toURL());
+                loadProps(propFile.toURI().toURL());
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             }
         } else {
-            init(this.getClass().getClassLoader().getResource("pieConfig.properties"));
+            loadProps(this.getClass().getClassLoader().getResource("pieConfig.properties"));
         }
+        init();
     }
     public PieConfig(URL propertiesUrl) {
-        init(propertiesUrl);
+        loadProps(this.getClass().getClassLoader().getResource("pieConfig.default.properties"));
+        loadProps(propertiesUrl);
+        init();
     }
-    private void init(URL propertiesUrl) {
+    private void loadProps(URL propertiesUrl) {
         if (propertiesUrl != null) {
             InputStream is = null;
             try {
@@ -50,7 +54,10 @@ public class PieConfig {
                 throw new RuntimeException(e);
             }
         }
-        
+
+    }
+
+    private void init() {
         enabled = Boolean.parseBoolean(properties.getProperty("pie.enabled", "true"));
         regenerateOnShutdown = Boolean.parseBoolean(properties.getProperty("pie.regenerateOnShutdown", "true"));
         adminInterfaceEnabled = Boolean.parseBoolean(properties.getProperty("pie.admininterface.enabled", "false"));

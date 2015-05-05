@@ -73,15 +73,15 @@ public class DynamicJavaPolicy extends Policy {
             if (permission.getName().equals("setPolicy") || permission.getName().equals("setSecurityManager")) {
                 return false;
             }
-            
+
             for (Policy parentPolicy : parentPolicies) {
                 if (parentPolicy.implies(domain, permission)) {
                     return true;
                 }
             }
-            
+
             String callingClassName = Thread.currentThread().getStackTrace()[2].getClassName();
-            if (callingClassName.startsWith("com.coverity.security.pie.")) {
+            if (callingClassName.startsWith("com.coverity.security.pie.") && domain.getCodeSource() != null) {
                 Certificate[] certificates = domain.getCodeSource().getCertificates();
                 if (certificates != null && certificates.length > 0) {
                     try {
@@ -100,7 +100,7 @@ public class DynamicJavaPolicy extends Policy {
                     }
                 }
             }
-            
+
             if (policy.implies(domain.getCodeSource(), permission)) {
                 return true;
             }

@@ -10,7 +10,7 @@ public interface StringMatcher {
      *
      * @param matcher The matcher pattern.
      * @param matchee The string against which the match is being performed.
-     * @return
+     * @return Whether matchee is matched by the matcher.
      */
     public boolean matches(String matcher, String matchee);
 }

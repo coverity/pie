@@ -32,7 +32,7 @@ To quickly get started with PIE, just follow these steps:
 Using PIE in Other Containers
 -----------------------------
 
-PIE is easiest to use in a Servlet 3.0 container like Jetty or Tomcat (which automatically discover the PIE JARs and start it up on load). However, PIE uses standard Servlet interfaces, so you can load it in just about any container. For example, PIE has a bundle for Dropwizard support; besides including PIE as a dependency, all you need to due is include the PieBundle in your application's initialization method:
+PIE is easiest to use in a Servlet 3.0 container like Jetty or Tomcat (which automatically discover the PIE JARs and start it up on load). However, PIE uses standard Servlet interfaces, so you can load it in just about any container. For example, PIE has a bundle for Dropwizard support; besides including PIE as a dependency, all you need to do is include the PieBundle in your application's initialization method:
 
     public void initialize(Bootstrap<HelloWorldConfiguration> bootstrap) {
         bootstrap.addBundle(new PieBundle());

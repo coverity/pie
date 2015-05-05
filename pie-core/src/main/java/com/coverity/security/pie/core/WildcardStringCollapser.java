@@ -38,7 +38,7 @@ public class WildcardStringCollapser implements StringCollapser {
      *
      * @param matcher
      * @param matchee
-     * @return
+     * @return Whether the matchee is matched by the matcher pattern.
      */
     public boolean matches(String matcher, String matchee) {
         if (matcher.equals(wildcard)) {
