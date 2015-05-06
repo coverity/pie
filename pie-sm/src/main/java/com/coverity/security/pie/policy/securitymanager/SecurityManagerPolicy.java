@@ -125,65 +125,68 @@ public class SecurityManagerPolicy extends Policy {
     }
     
     public void writeJavaPolicy(Writer writer) throws IOException {
-        Collection<String[]> allGrants = getGrants(null, null, null, null);
-        Map<String, Collection<String[]>> grantsByCodeSource = new HashMap<String, Collection<String[]>>();
-        for (String[] grant : allGrants) {
-            if (!grantsByCodeSource.containsKey(grant[0])) {
-                Collection<String[]> c = new ArrayList<String[]>();
-                c.add(grant);
-                grantsByCodeSource.put(grant[0], c);
-            } else {
-                grantsByCodeSource.get(grant[0]).add(grant);
-            }
-        }
-        
-        List<String> codeSources = new ArrayList<String>(grantsByCodeSource.keySet());
-        Collections.sort(codeSources);
-        
-        for (String codeSource : codeSources) {
-            writer.write("grant codeBase \"" + codeSource + "\" {\n");
-            
-            List<String[]> grants = new ArrayList<String[]>(grantsByCodeSource.get(codeSource));
-            Collections.sort(grants, new Comparator<String[]>() {
-                @Override
-                public int compare(String[] o1, String[] o2) {
-                    int c = o1[1].compareTo(o2[1]);
-                    if (c != 0) {
-                        return c;
-                    }
-                    c = o1[2].compareTo(o2[2]);
-                    if (c != 0) {
-                        return c;
-                    }
-                    if (o1.length < 4 && o2.length == 4) {
-                        return -1;
-                    }
-                    if (o1.length == 4 && o2.length < 4) {
-                        return 1;
-                    }
-                    if (o1[3] == null && o2[3] == null) {
-                        return 0;
-                    }
-                    if (o1[3] == null && o2[3] != null) {
-                        return -1;
-                    }
-                    if (o1[3] != null && o2[3] == null) {
-                        return 1;
-                    }
-                    return o1[3].compareTo(o2[3]);
-                }
-            });
-            
-            for (String[] grant : grants) {
-                if (grant[3] == null) {
-                    writer.write("    permission " + grant[1] + " \"" + grant[2] + "\";\n");
+        try {
+            Collection<String[]> allGrants = getGrants(null, null, null, null);
+            Map<String, Collection<String[]>> grantsByCodeSource = new HashMap<String, Collection<String[]>>();
+            for (String[] grant : allGrants) {
+                if (!grantsByCodeSource.containsKey(grant[0])) {
+                    Collection<String[]> c = new ArrayList<String[]>();
+                    c.add(grant);
+                    grantsByCodeSource.put(grant[0], c);
                 } else {
-                    writer.write("    permission " + grant[1] + " \"" + grant[2] + "\", \"" + grant[3] + "\";\n");
+                    grantsByCodeSource.get(grant[0]).add(grant);
                 }
             }
-            writer.write("};\n");
+
+            List<String> codeSources = new ArrayList<String>(grantsByCodeSource.keySet());
+            Collections.sort(codeSources);
+
+            for (String codeSource : codeSources) {
+                writer.write("grant codeBase \"" + codeSource + "\" {\n");
+
+                List<String[]> grants = new ArrayList<String[]>(grantsByCodeSource.get(codeSource));
+                Collections.sort(grants, new Comparator<String[]>() {
+                    @Override
+                    public int compare(String[] o1, String[] o2) {
+                        int c = o1[1].compareTo(o2[1]);
+                        if (c != 0) {
+                            return c;
+                        }
+                        c = o1[2].compareTo(o2[2]);
+                        if (c != 0) {
+                            return c;
+                        }
+                        if (o1.length < 4 && o2.length == 4) {
+                            return -1;
+                        }
+                        if (o1.length == 4 && o2.length < 4) {
+                            return 1;
+                        }
+                        if (o1[3] == null && o2[3] == null) {
+                            return 0;
+                        }
+                        if (o1[3] == null && o2[3] != null) {
+                            return -1;
+                        }
+                        if (o1[3] != null && o2[3] == null) {
+                            return 1;
+                        }
+                        return o1[3].compareTo(o2[3]);
+                    }
+                });
+
+                for (String[] grant : grants) {
+                    if (grant[3] == null) {
+                        writer.write("    permission " + grant[1] + " \"" + grant[2] + "\";\n");
+                    } else {
+                        writer.write("    permission " + grant[1] + " \"" + grant[2] + "\", \"" + grant[3] + "\";\n");
+                    }
+                }
+                writer.write("};\n");
+            }
+        } finally {
+            IOUtil.closeSilently(writer);
         }
-        writer.close();
     }
     
     public void parseJavaPolicy(Reader reader) {

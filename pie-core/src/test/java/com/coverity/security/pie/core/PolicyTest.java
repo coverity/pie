@@ -3,6 +3,7 @@ package com.coverity.security.pie.core;
 import static org.testng.Assert.assertEquals;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -19,7 +20,7 @@ public class PolicyTest {
         File file = File.createTempFile("test-policy", null);
         
         Policy policy = new SimplePolicy();
-        policy.writePolicy(new FileWriter(file));
+        policy.writePolicy(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
         assertEquals(IOUtil.readFile(file), "{\n}\n");
     }
     
@@ -41,8 +42,8 @@ public class PolicyTest {
         
         IOUtil.writeFile(file, contents);
         Policy policy = new SimplePolicy();
-        policy.parsePolicy(new FileReader(file));
-        
+        policy.parsePolicy(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+
         Assert.assertTrue(policy.implies("firstFact", "secondFact"));
         Assert.assertTrue(policy.implies("firstFact", "thirdFact"));
         Assert.assertTrue(policy.implies("fourthFact", "fifthFact", "sixthFact"));

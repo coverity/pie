@@ -4,14 +4,9 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import java.io.File;
-import java.io.FilePermission;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.cert.Certificate;
@@ -70,8 +65,8 @@ public class SecurityManagerPolicyTest {
         
         IOUtil.writeFile(file, contents);
         SecurityManagerPolicy policy = createPolicy();
-        policy.parseJavaPolicy(new FileReader(file));
-        policy.writeJavaPolicy(new FileWriter(file));
+        policy.parseJavaPolicy(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+        policy.writeJavaPolicy(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
         assertEquals(IOUtil.readFile(file), contents);
     }
     
@@ -132,7 +127,7 @@ public class SecurityManagerPolicyTest {
                 + "};\n");
         
         SecurityManagerPolicy policy = createPolicy();
-        policy.parseJavaPolicy(new FileReader(file));
+        policy.parseJavaPolicy(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
         
         java.security.cert.Certificate[] certs = null;
         policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new FilePermission("/tmp/foo/bar/baz.txt", "read"));
@@ -144,7 +139,7 @@ public class SecurityManagerPolicyTest {
         
         policy.addViolationsToPolicy();
         policy.collapsePolicy();
-        policy.writeJavaPolicy(new FileWriter(file));
+        policy.writeJavaPolicy(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
         
         assertEquals(IOUtil.readFile(file),
                 "grant codeBase \"file:/tmp/bar.jar\" {\n"
@@ -214,12 +209,12 @@ public class SecurityManagerPolicyTest {
                 + "};\n");
 
         SecurityManagerPolicy policy = createPolicy();
-        policy.parseJavaPolicy(new FileReader(file));
+        policy.parseJavaPolicy(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
         policy.collapsePolicy();
-        policy.writeJavaPolicy(new FileWriter(file));
-        
-        assertEquals(IOUtil.readFile(file), 
-                "grant codeBase \"file:/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/WEB-INF/lib/-\" {\n"
+        policy.writeJavaPolicy(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
+
+        assertEquals(IOUtil.readFile(file),
+            "grant codeBase \"file:/home/ihaken/tomcats/pebble/webapps/pebble-2.6.4/WEB-INF/lib/-\" {\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble\", \"read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble/*\", \"read,write\";\n"
                 + "    permission java.io.FilePermission \"/home/ihaken/pebble/blogs/default\", \"read,write\";\n"
@@ -247,7 +242,7 @@ public class SecurityManagerPolicyTest {
         policy.collapsePolicy();
         
         File file = File.createTempFile("test-policy", null);
-        policy.writeJavaPolicy(new FileWriter(file));
+        policy.writeJavaPolicy(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
         
         assertEquals(IOUtil.readFile(file),
                 "grant codeBase \"file:/tmp/bar.jar\" {\n"
@@ -301,8 +296,8 @@ public class SecurityManagerPolicyTest {
                 + "};\n");
         
         SecurityManagerPolicy policy = createPolicy();
-        policy.parseJavaPolicy(new FileReader(file));
-        policy.writeJavaPolicy(new FileWriter(file));
+        policy.parseJavaPolicy(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+        policy.writeJavaPolicy(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
 
         assertEquals(IOUtil.readFile(file),
                 "grant codeBase \"file:/tmp/foo.jar\" {\n"

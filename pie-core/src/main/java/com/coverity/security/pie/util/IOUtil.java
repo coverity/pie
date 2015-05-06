@@ -1,14 +1,8 @@
 package com.coverity.security.pie.util;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 public class IOUtil {
     public static void closeSilently(Closeable closeable) {
@@ -22,10 +16,10 @@ public class IOUtil {
     }
     
     public static String readFile(File file) throws IOException {
-        return toString(new FileReader(file));
+        return toString(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
     }
     public static String readFile(String file) throws IOException {
-        return toString(new FileReader(file));
+        return toString(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
     }
     public static String readFile(URL file) throws IOException {
         return toString(file.openStream());
@@ -33,7 +27,7 @@ public class IOUtil {
     
     public static String toString(InputStream is) throws IOException {
         try {
-            return toString(new InputStreamReader(is));
+            return toString(new InputStreamReader(is, StandardCharsets.UTF_8));
         } finally {
             closeSilently(is);
         }
@@ -56,9 +50,9 @@ public class IOUtil {
     
     
     public static void writeFile(File file, String content) throws IOException {
-        writeFile(new FileWriter(file), content);
+        writeFile(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8), content);
     }
-    private static void writeFile(FileWriter fw, String content) throws IOException {
+    private static void writeFile(Writer fw, String content) throws IOException {
         try {
             fw.write(content);
             fw.close();

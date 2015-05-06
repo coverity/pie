@@ -18,16 +18,19 @@ public class FileScanner {
         return files.toArray(new URL[files.size()]);
     }
     private static void findJars(File root, Collection<URL> collection) throws MojoExecutionException {
-        for (File file : root.listFiles()) {
-            if (file.isFile() && file.getName().endsWith(".jar")) {
-                try {
-                    collection.add(file.toURI().toURL());
-                } catch (MalformedURLException e) {
-                    throw new MojoExecutionException("Could not convert file to URL", e);
+        File[] children = root.listFiles();
+        if (children != null) {
+            for (File file : children) {
+                if (file.isFile() && file.getName().endsWith(".jar")) {
+                    try {
+                        collection.add(file.toURI().toURL());
+                    } catch (MalformedURLException e) {
+                        throw new MojoExecutionException("Could not convert file to URL", e);
+                    }
                 }
-            }
-            if (file.isDirectory()) {
-                findJars(file, collection);
+                if (file.isDirectory()) {
+                    findJars(file, collection);
+                }
             }
         }
     }

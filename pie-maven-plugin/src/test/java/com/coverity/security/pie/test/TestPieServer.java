@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -29,13 +30,14 @@ public class TestPieServer extends NanoHTTPD {
     public static void main(String[] args) throws IOException {
         if (args.length > 0 && args[0].equals("shutdown")) {
             CloseableHttpClient httpclient = HttpClients.createDefault();
-            
-            HttpGet httpGet = new HttpGet("http://localhost:18885/shutdown");
             CloseableHttpResponse response1 = null;
-            response1 = httpclient.execute(httpGet);
-            response1.close();
-            httpclient.close();
-            
+            try {
+                HttpGet httpGet = new HttpGet("http://localhost:18885/shutdown");
+                response1 = httpclient.execute(httpGet);
+            } finally {
+                IOUtil.closeSilently(response1);
+                IOUtil.closeSilently(httpclient);
+            }
             return;
         }
         
@@ -74,6 +76,7 @@ public class TestPieServer extends NanoHTTPD {
         String[][] permissionRequests;
         if (clearedViolations.contains(testFile.toString())) {
             permissionRequests = new String[0][];
+            IOUtil.closeSilently(testFileResource);
         } else {
             try {
                 permissionRequests = readViolations(testFileResource);
@@ -119,7 +122,7 @@ public class TestPieServer extends NanoHTTPD {
         
         Collection<String[]> permissionRequests = new ArrayList<String[]>();
         try {
-            isr = new InputStreamReader(is);
+            isr = new InputStreamReader(is, StandardCharsets.UTF_8);
             br = new BufferedReader(isr);
             String line;
             

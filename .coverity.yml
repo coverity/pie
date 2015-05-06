@@ -1,0 +1,13 @@
+triage:
+    - action: suppress
+      issueKey: 8e74a204bd37696eb04757ac1dbf63c9
+      comment: Intentional. Given that this class loader will load and effectively invoke code from paths passed in, it's a good thing that it be subject to any parent SecurityManager policy.
+    - action: suppress
+      issueKey: dbf96c4c34996e98e687a67a09ee548b
+      comment: False Positive
+    - action: suppress
+      issueKey: 5bef013caf00662adef96d0a8f0c160a
+      comment: False Positive
+filters:
+    # third-party embedded
+    - filePath: fi/iki/elonen/NanoHTTPD.java

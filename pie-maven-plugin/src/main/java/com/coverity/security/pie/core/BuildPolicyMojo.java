@@ -1,14 +1,11 @@
 package com.coverity.security.pie.core;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -133,9 +130,9 @@ public class BuildPolicyMojo extends AbstractMojo
                 final File policyFile = new File(policyUrl.getPath());
                 
                 if (policyFile.exists()) {
-                    FileReader fr = null;
+                    Reader fr = null;
                     try {
-                        fr = new FileReader(policyFile);
+                        fr = new InputStreamReader(new FileInputStream(policyFile), StandardCharsets.UTF_8);
                         policy.parsePolicy(fr);
                     } catch (IOException e) {
                         throw new MojoExecutionException("Could not parse policy file: " + policyConfig.getPolicyFile().toString());
@@ -202,7 +199,7 @@ public class BuildPolicyMojo extends AbstractMojo
                         if (policyConfig.isCollapseEnabled()) {
                             policy.collapsePolicy();
                         }
-                        policy.writePolicy(new FileWriter(policyFile));
+                        policy.writePolicy(new OutputStreamWriter(new FileOutputStream(policyFile), StandardCharsets.UTF_8));
                     }
                 } catch (IOException e) {
                     throw new MojoExecutionException("Error handling server request.", e);

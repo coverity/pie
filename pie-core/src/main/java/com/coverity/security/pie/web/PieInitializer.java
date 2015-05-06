@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -73,7 +74,7 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
                     InputStream is = null;
                     try {
                         is = policyEnforcer.getPolicyConfig().getPolicyFile().openStream();
-                        policyEnforcer.getPolicy().parsePolicy(new InputStreamReader(is));
+                        policyEnforcer.getPolicy().parsePolicy(new InputStreamReader(is, StandardCharsets.UTF_8));
                     } catch (FileNotFoundException e) {
                       // Do nothing; policy not created yet  
                     } catch (IOException e) {
@@ -143,7 +144,7 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
             OutputStream os = null;
             try {
                 os = new FileOutputStream(policyFile.getPath());
-                policyEnforcer.getPolicy().writePolicy(new OutputStreamWriter(os));
+                policyEnforcer.getPolicy().writePolicy(new OutputStreamWriter(os, StandardCharsets.UTF_8));
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -152,7 +153,7 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
         }
     }
     
-    private class PolicyGeneratorRunnable implements Runnable {
+    private static class PolicyGeneratorRunnable implements Runnable {
         private boolean shuttingDown = false;
         
         @Override

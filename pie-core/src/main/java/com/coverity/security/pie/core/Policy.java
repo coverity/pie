@@ -1,23 +1,15 @@
 package com.coverity.security.pie.core;
 
+import com.coverity.security.pie.util.IOUtil;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.json.JSONObject;
-
-import com.coverity.security.pie.util.IOUtil;
 
 /**
  * An abstract representation of a security policy. This abstract class contains common methods, such as deciding
@@ -237,10 +229,13 @@ public abstract class Policy {
      * @throws IOException
      */
     public void writePolicy(Writer writer) throws IOException {
-        writer.write("{\n");
-        writePolicy(writer, policyRoot, 1);
-        writer.write("}\n");
-        writer.close();
+        try {
+            writer.write("{\n");
+            writePolicy(writer, policyRoot, 1);
+            writer.write("}\n");
+        } finally {
+            IOUtil.closeSilently(writer);
+        }
     }
     private void writePolicy(Writer writer, FactTreeNode factTreeNode, int indent) throws IOException {
         List<FactTreeNode> children = new ArrayList<FactTreeNode>(factTreeNode.children);

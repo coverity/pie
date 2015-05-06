@@ -50,17 +50,16 @@ public class DynamicJavaPolicy extends Policy {
     
     private Certificate loadPublicX509(String fileName) throws GeneralSecurityException, IOException {
         InputStream is = null;
-        Certificate crt = null;
         try {
             is = this.getClass().getResourceAsStream(fileName);
             if (is == null) {
                 throw new IllegalArgumentException("Could not find resource: " + fileName);
             }
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            crt = cf.generateCertificate(is);
+            Certificate crt = cf.generateCertificate(is);
             is.close();
             return crt;
-        } catch (IOException e) {
+        } catch (IOException | GeneralSecurityException e) {
             IOUtil.closeSilently(is);
             throw e;
         }
