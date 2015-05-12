@@ -127,7 +127,7 @@ public abstract class AbstractPathCollapser {
                         // If this is relative root
                         if (a.length == 1) {
                             // If this isn't dirStar (i.e. is "*" but not "-") then add the dirStar root
-                            if (!a[0].equals("dirStar")) {
+                            if (!a[0].equals(dirStar)) {
                                 newPaths.add(new PathName(new String[] { dirStar }, pathNameA.getKey().getNonPathComponents()));
                             }
                         } else if (a.length > 2 || !a[0].equals("") || !a[1].equals(dirStar)) {

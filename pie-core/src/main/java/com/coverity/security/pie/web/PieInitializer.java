@@ -39,6 +39,11 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
     
     @Override
     public void onStartup(Set<Class<?>> classes, ServletContext cx) {
+        if (classes == null) {
+            System.out.println("ERROR! Servlet 3.0 context did not supply any classes to PieInitializer. Are PIE modules missing from the class path?");
+            return;
+        }
+
         doSetup(classes, cx);
         cx.addListener(this);
     }

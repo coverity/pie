@@ -19,6 +19,8 @@ import com.coverity.security.pie.core.PolicyEnforcer;
  */
 public class PieAdminFilter implements Filter {
 
+    public static final String ADMIN_FILTER_URI = "/c0bd580ddcb4666b1PIEec61812f3cdf305";
+
     private final PieInitializer pieInitializer;
     
     public PieAdminFilter(PieInitializer pieInitializer) {
@@ -38,7 +40,7 @@ public class PieAdminFilter implements Filter {
             if (httpServletRequest.getRequestURI().length() >= httpServletRequest.getContextPath().length()) {
                 path = httpServletRequest.getRequestURI().substring(httpServletRequest.getContextPath().length());
             }
-            if ("/c0bd580ddcb4666b1PIEec61812f3cdf305".equals(path)) {
+            if (ADMIN_FILTER_URI.equals(path)) {
                 
                 PolicyEnforcer policyEnforcer = pieInitializer.getPolicyEnforcer(httpServletRequest.getParameter("policyEnforcer"));
                 String startTimeStr = httpServletRequest.getParameter("startTime");

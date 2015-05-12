@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
 
+import com.coverity.security.pie.web.PieAdminFilter;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -143,7 +144,7 @@ public class BuildPolicyMojo extends AbstractMojo
                 
                 URIBuilder uriBuilder;
                 try {
-                    uriBuilder = new URIBuilder(serverUrl.toString() + "/c0bd580ddcb4666b1PIEec61812f3cdf305");
+                    uriBuilder = new URIBuilder(serverUrl.toString() + PieAdminFilter.ADMIN_FILTER_URI);
                 } catch (URISyntaxException e) {
                     throw new MojoExecutionException("Invalid serverUrl.", e);
                 }

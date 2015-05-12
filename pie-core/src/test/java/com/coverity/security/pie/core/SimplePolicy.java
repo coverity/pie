@@ -37,7 +37,14 @@ public class SimplePolicy extends Policy {
         public FactMetaData getChildFactMetaData(String fact) {
             return getInstance();
         }
-        
+    }
+
+    public boolean isImplied(String ... facts) {
+        return super.implies(facts);
+    }
+
+    public void doLogViolation(String ... facts) {
+        super.logViolation(facts);
     }
 
 }

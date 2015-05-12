@@ -24,7 +24,7 @@ import com.coverity.security.pie.util.IOUtil;
  */
 public class CspEnforcementFilter implements Filter {
 
-    private static final String REPORT_URI = "/a379568856ef23aPIE19bc95ce4e2f7fd2b";
+    public static final String REPORT_URI = "/a379568856ef23aPIE19bc95ce4e2f7fd2b";
     
     private final CspPolicy policy;
     private final PolicyConfig policyConfig;
