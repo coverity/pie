@@ -61,7 +61,7 @@ public class CspEnforcementFilterTest {
     @Test
     public void testBasicViolationReport() throws IOException, ServletException, URISyntaxException {
         CspPolicy policy = createMock(CspPolicy.class);
-        policy.logViolation(new URI("http://foo.bar/a/b/c"), "script-src", "http://fizz.buzz/a/b/c");
+        policy.logViolation(new URI("http://foo.bar/a/b/c"), "script-src", "http://fizz.buzz:8080/a/b/c");
         expectLastCall();
 
         PolicyConfig policyConfig = createMock(PolicyConfig.class);
@@ -76,7 +76,7 @@ public class CspEnforcementFilterTest {
         expect(request.getInputStream()).andReturn(new DelegateServletInputStream(new ByteArrayInputStream(
                 ("{\"csp-report\":{"
                 + "\"document-uri\": \"http://foo.bar/a/b/c\","
-                + "\"blocked-uri\": \"http://fizz.buzz/a/b/c\","
+                + "\"blocked-uri\": \"http://fizz.buzz:8080/a/b/c\","
                 + "\"violated-directive\": \"script-src self\""
                 + "}}")
                 .getBytes(StandardCharsets.UTF_8))));

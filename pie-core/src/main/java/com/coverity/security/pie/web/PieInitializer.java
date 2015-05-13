@@ -129,6 +129,8 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
             }
             policyEnforcer.shutdown();
         }
+
+        POLICY_ENFORCERS.clear();
     }
     
     PolicyEnforcer getPolicyEnforcer(String name) {

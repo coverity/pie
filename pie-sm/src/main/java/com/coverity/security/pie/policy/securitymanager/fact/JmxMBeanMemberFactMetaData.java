@@ -24,6 +24,10 @@ public class JmxMBeanMemberFactMetaData implements FactMetaData {
 
     @Override
     public boolean matches(String matcher, String matchee) {
+        /* From the JavaDoc: ... empty or the single character "*", both of which grant access to any member. */
+        if ("".equals(matcher) || "*".equals(matcher)) {
+            return true;
+        }
         return EqualityStringMatcher.getInstance().matches(matcher, matchee);
     }
 

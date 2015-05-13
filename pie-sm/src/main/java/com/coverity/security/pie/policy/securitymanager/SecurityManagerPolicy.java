@@ -156,12 +156,6 @@ public class SecurityManagerPolicy extends Policy {
                         if (c != 0) {
                             return c;
                         }
-                        if (o1.length < 4 && o2.length == 4) {
-                            return -1;
-                        }
-                        if (o1.length == 4 && o2.length < 4) {
-                            return 1;
-                        }
                         if (o1[3] == null && o2[3] == null) {
                             return 0;
                         }

@@ -9,6 +9,7 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 
 import static org.testng.Assert.*;
 
@@ -49,6 +50,21 @@ public class PieInitializerTest {
             tomcat.start();
             assertNotNull(TestPolicyEnforcer.getInstance());
             assertTrue(TestPolicyEnforcer.getInstance().isApplied());
+        } finally {
+            tomcat.stop();
+        }
+    }
+
+    @Test
+    public void testAdminFilterEnabled() throws IOException, ServletException, InterruptedException, LifecycleException {
+        IOUtil.writeFile(new File("target/test-classes/pieConfig.properties"), "pie.admininterface.enabled = true\nsimple.policyFile = file:target/test-classes/simple.policy");
+
+        TomcatContainerWrapper tomcat = new TomcatContainerWrapper();
+        try {
+            tomcat.start();
+            // Verify that the admin filter responds to requests
+            String content = IOUtil.toString(new URL("http://localhost:18885/myapp" + PieAdminFilter.ADMIN_FILTER_URI + "?policyEnforcer=simple").openStream());
+            assertTrue(content.startsWith("=== PIE REPORT ==="));
         } finally {
             tomcat.stop();
         }

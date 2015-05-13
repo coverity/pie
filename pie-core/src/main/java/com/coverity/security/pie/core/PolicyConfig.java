@@ -77,7 +77,4 @@ public class PolicyConfig {
     public String getProperty(String name) {
         return pieConfig.getProperties().getProperty(this.name + "." + name);
     }
-    public String getProperty(String name, String defaultValue) {
-        return pieConfig.getProperties().getProperty(this.name + "." + name, defaultValue);
-    }
 }

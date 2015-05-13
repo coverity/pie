@@ -12,18 +12,14 @@ import com.coverity.security.pie.util.StringUtil;
  */
 public class UriCspDirectiveCollapser extends AbstractPathCollapser implements StringCollapser {
     public UriCspDirectiveCollapser(int collapseThreshold) {
-        super("*", "**", collapseThreshold, 2);
+        super("*", "**", collapseThreshold, 1);
     }
-    
+
     @Override
     protected boolean pathNameMatches(PathName matcher, PathName matchee) {
         // Do not collapse URI paths down to the root.
         if (matcher.getPathComponents().length == 1
                 && (matcher.getPathComponents()[0].equals("*") || matcher.getPathComponents()[0].equals("**"))) {
-            return false;
-        }
-        if (matcher.getPathComponents().length == 2 && matcher.getPathComponents()[0].equals("")
-                && (matcher.getPathComponents()[1].equals("*") || matcher.getPathComponents()[1].equals("**"))) {
             return false;
         }
         return super.pathNameMatches(matcher, matchee);
@@ -33,12 +29,16 @@ public class UriCspDirectiveCollapser extends AbstractPathCollapser implements S
     public <T> Map<String, Collection<T>> collapse(Map<String, Collection<T>> input) {
         Map<PathName, Collection<T>> inputMap = new HashMap<PathName, Collection<T>>(input.size());
         for (Map.Entry<String, Collection<T>> entry : input.entrySet()) {
-            inputMap.put(new PathName(entry.getKey().split("/", -1), null), entry.getValue());
+            String uri = entry.getKey();
+            if (!uri.startsWith("/")) {
+                throw new IllegalArgumentException("Expected URI to start with leading slash.");
+            }
+            inputMap.put(new PathName(uri.substring(1).split("/", -1), null), entry.getValue());
         }
         Map<PathName, Collection<T>> outputMap = collapsePaths(inputMap);
         Map<String, Collection<T>> output = new HashMap<String, Collection<T>>(outputMap.size());
         for (Map.Entry<PathName, Collection<T>> pathNameEntry : outputMap.entrySet()) {
-            output.put(StringUtil.join("/", pathNameEntry.getKey().getPathComponents()), pathNameEntry.getValue());
+            output.put("/" + StringUtil.join("/", pathNameEntry.getKey().getPathComponents()), pathNameEntry.getValue());
         }
         return output;
     }

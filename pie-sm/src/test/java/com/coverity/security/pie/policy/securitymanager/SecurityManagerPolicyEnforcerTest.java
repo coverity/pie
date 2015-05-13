@@ -36,6 +36,44 @@ public class SecurityManagerPolicyEnforcerTest {
         }
     }
 
+    @Test
+    public void testMultipleApplications() {
+        // Setup a stub SecurityManager that will let us clear out the Java policy set later
+        assertNull(System.getSecurityManager());
+        System.setSecurityManager(new StubSecurityManager());
+
+        try {
+            SecurityManagerPolicyEnforcer policyEnforcer = new SecurityManagerPolicyEnforcer();
+            policyEnforcer.init(new PieConfig());
+
+            ServletContext servletContext = createStrictMock(ServletContext.class);
+            replay(servletContext);
+            policyEnforcer.applyPolicy(servletContext);
+            verify(servletContext);
+
+            // Verify that the enforcer setup a DynamicJavaPolicy
+            assertNotNull(java.security.Policy.getPolicy());
+            assertEquals(java.security.Policy.getPolicy().getClass(), DynamicJavaPolicy.class);
+
+            SecurityManagerPolicyEnforcer secondEnforcer = new SecurityManagerPolicyEnforcer();
+            policyEnforcer.init(new PieConfig());
+            servletContext = createStrictMock(ServletContext.class);
+            replay(servletContext);
+            policyEnforcer.applyPolicy(servletContext);
+            verify(servletContext);
+
+            // Verify that we got here without exception
+            assertNotNull(java.security.Policy.getPolicy());
+            assertEquals(java.security.Policy.getPolicy().getClass(), DynamicJavaPolicy.class);
+
+            secondEnforcer.shutdown();
+            policyEnforcer.shutdown();
+        } finally {
+            java.security.Policy.setPolicy(null);
+            System.setSecurityManager(null);
+        }
+    }
+
     private static class StubSecurityManager extends SecurityManager {
         @Override
         public void checkPermission(Permission perm) {

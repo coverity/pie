@@ -54,26 +54,12 @@ public class HostnameCollapser extends AbstractPathCollapser implements StringCo
         
         Map<PathName, Collection<T>> inputMap = new HashMap<PathName, Collection<T>>(input.size());
         for (Map.Entry<String, Collection<T>> hostname : input.entrySet()) {
-            if (hostname.getKey().charAt(0) == '\'') {
-                // Discard 'none' entirely if other key exists
-                if (hostname.getKey().equals("'none'") && input.size() > 1) {
-                    continue;
-                }
-                
-                inputMap.put(new PathName(new String[] { hostname.getKey() }, null), null);
-            } else {
-                
-                final Matcher m = HOSTNAME_PATTERN.matcher(hostname.getKey());
-                if (!m.matches()) {
-                    throw new IllegalArgumentException("Unable to parse hostname: " + hostname.getKey());
-                }
-                
-                String scheme = m.group(2);
-                String[] host = m.group(3).split("\\.");
-                String port = m.group(5);
-                
-                inputMap.put(new PathName(reverse(host), new String[] { scheme, port }), hostname.getValue());
+            // Discard 'none' entirely if other key exists
+            if (hostname.getKey().equals("'none'") && input.size() > 1) {
+                continue;
             }
+
+            inputMap.put(toPathName(hostname.getKey()), hostname.getValue());
         }
         
         Map<PathName, Collection<T>> outputMap = collapsePaths(inputMap);

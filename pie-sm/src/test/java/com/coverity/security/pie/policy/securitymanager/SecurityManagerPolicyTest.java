@@ -69,6 +69,28 @@ public class SecurityManagerPolicyTest {
         policy.writeJavaPolicy(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
         assertEquals(IOUtil.readFile(file), contents);
     }
+
+    @Test
+    public void testJavaPolicyWriter() throws IOException {
+        SecurityManagerPolicy policy = createPolicy();
+        policy.logViolation(null, new MyPermission("foo", "bar"));
+        policy.logViolation(null, new MyPermission("foo", null));
+        policy.logViolation(null, new MyPermission("foo", "fizz"));
+        policy.logViolation(null, new MyPermission("goo", "bar"));
+        policy.logViolation(null, new MyPermission("goo", null));
+        policy.logViolation(null, new MyPermission("goo", "fizz"));
+        policy.addViolationsToPolicy();
+
+        StringWriter sw = new StringWriter();
+        policy.writeJavaPolicy(sw);
+        assertEquals(sw.toString(),
+                "grant codeBase \"<null>\" {\n" +
+                "    permission com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission \"foo\", \"bar\";\n" +
+                "    permission com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission \"foo\", \"fizz\";\n" +
+                "    permission com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission \"goo\", \"bar\";\n" +
+                "    permission com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission \"goo\", \"fizz\";\n" +
+                "};\n");
+    }
     
     @Test
     public void testCollapsePerms() throws IOException {
@@ -236,17 +258,23 @@ public class SecurityManagerPolicyTest {
         java.security.cert.Certificate[] certs = null;
         policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new FilePermission("/tmp/foo/bar/baz.txt", "read"));
         policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new FilePermission("/tmp/foo/bar/bing.txt", "read"));
-        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("tacos"));
-        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("burritos"));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("tacos", null));
+        policy.logViolation(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("burritos", "churros"));
         policy.addViolationsToPolicy();
         policy.collapsePolicy();
+
+        assertTrue(policy.implies(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("tacos", null)));
+        assertTrue(policy.implies(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("burritos", null)));
+        assertTrue(policy.implies(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("burritos", "churros")));
+        assertFalse(policy.implies(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("burritos", "hamburgers")));
+        assertFalse(policy.implies(new CodeSource(new URL("file:/tmp/bar.jar"), certs), new MyPermission("churros", null)));
         
         File file = File.createTempFile("test-policy", null);
         policy.writeJavaPolicy(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
         
         assertEquals(IOUtil.readFile(file),
                 "grant codeBase \"file:/tmp/bar.jar\" {\n"
-                + "    permission com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission \"burritos\";\n"
+                + "    permission com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission \"burritos\", \"churros\";\n"
                 + "    permission com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission \"tacos\";\n"
                 + "    permission java.io.FilePermission \"/tmp/foo/bar/*\", \"read\";\n"
                 + "};\n");
@@ -255,8 +283,11 @@ public class SecurityManagerPolicyTest {
     private static class MyPermission extends Permission {
         private static final long serialVersionUID = 1L;
 
-        public MyPermission(String name) {
+        private final String actions;
+
+        public MyPermission(String name, String actions) {
             super(name);
+            this.actions = actions;
         }
 
         @Override
@@ -266,7 +297,7 @@ public class SecurityManagerPolicyTest {
 
         @Override
         public String getActions() {
-            return null;
+            return actions;
         }
 
         @Override
@@ -365,6 +396,79 @@ public class SecurityManagerPolicyTest {
         assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("java.io.FilePermission").has("/a/b/e"));
         assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("java.io.FilePermission").has("/x/b/*"));
     }
+
+    @Test
+    public void testParseMBeanPermissions() throws IOException {
+        SecurityManagerPolicy policy = createPolicy();
+
+        final CodeSource codeSource = new CodeSource(new URL("file:/tmp/foo.jar"), new Certificate[0]);
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-", "registerMBean"));
+        policy.addViolationsToPolicy();
+
+        StringWriter sw = new StringWriter();
+        policy.writePolicy(sw);
+        JSONObject outPolicy = new JSONObject(sw.toString());
+
+        assertEquals(outPolicy.length(), 1);
+        assertTrue(outPolicy.has("file:/tmp/foo.jar"));
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").length(), 1);
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").has("javax.management.MBeanPermission"));
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission").length(), 1);
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission").getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").length(), 1);
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission").getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").getJSONObject("-").length(), 1);
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission")
+                .getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").getJSONObject("-").getJSONObject("*:*").length(), 1);
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission")
+                .getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").getJSONObject("-").getJSONObject("*:*").has("registerMBean"));
+
+        assertTrue(policy.implies(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:foo=bar]", "registerMBean")));
+
+        // Parse with empty ObjectName instead of missing ObjectName
+        policy = createPolicy();
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[]", "registerMBean"));
+        policy.addViolationsToPolicy();
+
+        sw = new StringWriter();
+        policy.writePolicy(sw);
+        outPolicy = new JSONObject(sw.toString());
+
+        assertEquals(outPolicy.length(), 1);
+        assertTrue(outPolicy.has("file:/tmp/foo.jar"));
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").length(), 1);
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").has("javax.management.MBeanPermission"));
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission").length(), 1);
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission").getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").length(), 1);
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission").getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").getJSONObject("-").length(), 1);
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission")
+                .getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").getJSONObject("-").getJSONObject("*:*").length(), 1);
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission")
+                .getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").getJSONObject("-").getJSONObject("*:*").has("registerMBean"));
+
+        assertTrue(policy.implies(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#-[metrics:foo=bar]", "registerMBean")));
+
+        // Parse with missing member
+        policy = createPolicy();
+        policy.logViolation(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter", "registerMBean"));
+        policy.addViolationsToPolicy();
+
+        sw = new StringWriter();
+        policy.writePolicy(sw);
+        outPolicy = new JSONObject(sw.toString());
+
+        assertEquals(outPolicy.length(), 1);
+        assertTrue(outPolicy.has("file:/tmp/foo.jar"));
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").length(), 1);
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").has("javax.management.MBeanPermission"));
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission").length(), 1);
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission").getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").length(), 1);
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission").getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").getJSONObject("*").length(), 1);
+        assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission")
+                .getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").getJSONObject("*").getJSONObject("*:*").length(), 1);
+        assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").getJSONObject("javax.management.MBeanPermission")
+                .getJSONObject("com.codahale.metrics.JmxReporter$JmxMeter").getJSONObject("*").getJSONObject("*:*").has("registerMBean"));
+
+        assertTrue(policy.implies(codeSource, new javax.management.MBeanPermission("com.codahale.metrics.JmxReporter$JmxMeter#fizzbuzz[metrics:foo=bar]", "registerMBean")));
+    }
     
     @Test
     public void testMBeanPermissionFacts() throws IOException {
@@ -391,6 +495,31 @@ public class SecurityManagerPolicyTest {
         assertEquals(outPolicy.getJSONObject("file:/tmp/foo.jar").length(), 1);
         assertTrue(outPolicy.getJSONObject("file:/tmp/foo.jar").has("javax.management.MBeanPermission"));
         // FIXME: Verify collapse/matching of jmx permissions
+    }
+
+    @Test
+    public void testCodeSourceMatching() throws IOException {
+        SecurityManagerPolicy policy = createPolicy();
+        policy.parsePolicy(new StringReader("{\n" +
+                "   \"file:/WEB-INF/classes/com/foo/*\": {\n" +
+                "      \"com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission\": { \"abc\": {} }\n" +
+                "   },\n" +
+                "   \"file:/WEB-INF/classes/com/bar/*\": {\n" +
+                "      \"com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission\": { \"def\": {} }\n" +
+                "   },\n" +
+                "   \"file:/WEB-INF/lib/-\": {\n" +
+                "      \"com.coverity.security.pie.policy.securitymanager.SecurityManagerPolicyTest$MyPermission\": { \"ghi\": {} }\n" +
+                "   }\n" +
+                "}"));
+
+        assertTrue(policy.implies(new CodeSource(new URL("file:/WEB-INF/classes/com/foo/Foo.class"), (Certificate[]) null), new MyPermission("abc", null)));
+        assertTrue(policy.implies(new CodeSource(new URL("file:/WEB-INF/classes/com/foo/Bar.class"), (Certificate[]) null), new MyPermission("abc", null)));
+        assertFalse(policy.implies(new CodeSource(new URL("file:/WEB-INF/classes/com/foo/bar/Foo.class"), (Certificate[]) null), new MyPermission("abc", null)));
+        assertFalse(policy.implies(new CodeSource(new URL("file:/WEB-INF/classes/com/bar/Foo.class"), (Certificate[]) null), new MyPermission("abc", null)));
+        assertTrue(policy.implies(new CodeSource(new URL("file:/WEB-INF/classes/com/bar/Foo.class"), (Certificate[]) null), new MyPermission("def", null)));
+        assertTrue(policy.implies(new CodeSource(new URL("file:/WEB-INF/lib/foo.jar!com/foo/Foo.class"), (Certificate[]) null), new MyPermission("ghi", null)));
+        assertFalse(policy.implies(new CodeSource(new URL("file:/WEB-INF/lib/foo.jar!com/foo/Foo.class"), (Certificate[]) null), new MyPermission("abc", null)));
+        assertFalse(policy.implies(new CodeSource(new URL("file:/WEB-INF/lib/foo.jar!com/foo/Foo.class"), (Certificate[]) null), new MyPermission("def", null)));
     }
     
     private static SecurityManagerPolicy createPolicy() {
