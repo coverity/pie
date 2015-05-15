@@ -136,7 +136,7 @@ your container's classpath (e.g. in Tomcat's lib directory).
     securityManager.isCollapseEnabled = true # Is policy simplification enabled?
     securityManager.collapseLibDir = true # Should PIE collapse permissions for all the JARs in the webapp's lib directory?
 
-Take a look at [pie-core/src/main/resources/pieConfig.default.properties](pieConfig.default.properties) which will
+Take a look at [pieConfig.default.properties](pie-core/src/main/resources/pieConfig.default.properties) which will
 always have a complete list of options.
 
 Policy Simplification
