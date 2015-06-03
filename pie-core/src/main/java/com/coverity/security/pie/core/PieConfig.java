@@ -16,11 +16,7 @@ import com.coverity.security.pie.util.IOUtil;
 public class PieConfig {
 
     private final Properties properties = new Properties();
-    
-    private boolean enabled;
-    private boolean regenerateOnShutdown;
-    private boolean adminInterfaceEnabled;
-    
+
     public PieConfig() {
         loadProps(this.getClass().getClassLoader().getResource("pieConfig.default.properties"));
         File propFile = new File("pieConfig.properties");
@@ -33,12 +29,10 @@ public class PieConfig {
         } else {
             loadProps(this.getClass().getClassLoader().getResource("pieConfig.properties"));
         }
-        init();
     }
     public PieConfig(URL propertiesUrl) {
         loadProps(this.getClass().getClassLoader().getResource("pieConfig.default.properties"));
         loadProps(propertiesUrl);
-        init();
     }
     private void loadProps(URL propertiesUrl) {
         if (propertiesUrl != null) {
@@ -57,26 +51,35 @@ public class PieConfig {
 
     }
 
-    private void init() {
-        enabled = Boolean.parseBoolean(properties.getProperty("pie.enabled", "true"));
-        regenerateOnShutdown = Boolean.parseBoolean(properties.getProperty("pie.regenerateOnShutdown", "true"));
-        adminInterfaceEnabled = Boolean.parseBoolean(properties.getProperty("pie.admininterface.enabled", "false"));
-    }
-    
-    
     public Properties getProperties() {
         return properties;
     }
 
+    private boolean getBoolean(String prop, boolean defaultValue) {
+        String v = getProperty(prop);
+        if (v == null) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(v);
+    }
+
+    private String getProperty(String name) {
+        return properties.getProperty("pie." + name);
+    }
+
     public boolean isEnabled() {
-        return enabled;
+        return getBoolean("enabled", true);
     }
 
     public boolean isRegenerateOnShutdown() {
-        return regenerateOnShutdown;
+        return getBoolean("regenerateOnShutdown", true);
     }
 
     public boolean isAdminInterfaceEnabled() {
-        return adminInterfaceEnabled;
+        return getBoolean("admininterface.enabled", false);
     }
+
+    public boolean isLoggingEnabled() { return getBoolean("loggingEnabled", false); }
+
+    public String getLogPath() { return getProperty("logPath"); }
 }

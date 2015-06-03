@@ -23,6 +23,7 @@ import javax.servlet.annotation.HandlesTypes;
 import com.coverity.security.pie.core.PieConfig;
 import com.coverity.security.pie.core.PolicyEnforcer;
 import com.coverity.security.pie.util.IOUtil;
+import com.coverity.security.pie.util.PieLogger;
 
 /**
  * An initializer that will automatically be picked up by Servlet 3.0 containers and which instantiates all the PIE
@@ -30,8 +31,10 @@ import com.coverity.security.pie.util.IOUtil;
  */
 @HandlesTypes(PolicyEnforcer.class)
 public class PieInitializer implements ServletContainerInitializer, ServletContextListener {
-    
+
     private static final Map<String, PolicyEnforcer> POLICY_ENFORCERS = new HashMap<String, PolicyEnforcer>();
+    private static final Object INITIALIZATION_MUTEX = new Object();
+    private static int initializationCount;
 
     private PieConfig pieConfig;
     private PolicyGeneratorRunnable policyGeneratorRunnable;
@@ -51,6 +54,13 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
     public void doSetup(Set<Class<?>> classes, ServletContext cx) {
         
         pieConfig = new PieConfig();
+        synchronized (INITIALIZATION_MUTEX) {
+            if (initializationCount == 0) {
+                PieLogger.setPieConfig(pieConfig);
+            }
+            initializationCount += 1;
+        }
+
         if (!pieConfig.isEnabled()) {
             return;
         }
@@ -111,6 +121,13 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
+        synchronized (INITIALIZATION_MUTEX) {
+            initializationCount -= 1;
+            if (initializationCount != 0) {
+                return;
+            }
+        }
+
         if (policyGeneratorThread != null) {
             policyGeneratorRunnable.shuttingDown = true;
             policyGeneratorThread.interrupt();
@@ -131,6 +148,7 @@ public class PieInitializer implements ServletContainerInitializer, ServletConte
         }
 
         POLICY_ENFORCERS.clear();
+        PieLogger.setPieConfig(null);
     }
     
     PolicyEnforcer getPolicyEnforcer(String name) {

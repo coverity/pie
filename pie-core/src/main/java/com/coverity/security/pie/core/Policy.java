@@ -1,6 +1,7 @@
 package com.coverity.security.pie.core;
 
 import com.coverity.security.pie.util.IOUtil;
+import com.coverity.security.pie.util.PieLogger;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -291,6 +292,7 @@ public abstract class Policy {
      * @param facts
      */
     protected final void logViolation(String ... facts) {
+        PieLogger.info("Observed policy violation: " + Arrays.toString(facts));
         synchronized (violationStore) {
             violationStore.logViolation(facts);
         }

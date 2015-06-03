@@ -7,6 +7,8 @@ import com.coverity.security.pie.core.PolicyEnforcer;
 
 import javax.servlet.ServletContext;
 import java.io.FilePermission;
+import java.io.IOException;
+import java.io.StringReader;
 import java.security.ProtectionDomain;
 
 /**
@@ -56,10 +58,13 @@ public class SecurityManagerPolicyEnforcer implements PolicyEnforcer {
             perform FileSystem API checks before loading in the PIE security manager.
              */
             SecurityManagerPolicy fakePolicy = new SecurityManagerPolicy();
+            try {
+                fakePolicy.parsePolicy(new StringReader("{\"<null>\":{\"java.io.FilePermission\":{\"/tmp/foo/bar\":{\"read\":{}}}}}"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             ProtectionDomain fakeProtectionDomain = java.lang.String.class.getProtectionDomain();
             FilePermission fakePermission = new FilePermission("/tmp/foo/bar", "read");
-            fakePolicy.logViolation(fakeProtectionDomain.getCodeSource(), fakePermission);
-            fakePolicy.addViolationsToPolicy();
             boolean t = new DynamicJavaPolicy(null, fakePolicy, policyConfig).implies(fakeProtectionDomain, fakePermission);
             if (!t) { throw new IllegalStateException("Dummy implies request should have returned true."); }
 
