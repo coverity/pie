@@ -202,7 +202,7 @@ coverage rather than a sign of someone exploiting the application.
 manually update your policy or regenerate it by rerunning your test suite with these new tests. Repeat starting at
 step 4.
 
-In this workflow, we have never configured PIE to run in enforcement mode, and are just logging policy violations for
+In this workflow, we have never configured PIE to run in enforcement mode and are just logging policy violations for
 manual review. As such, PIE will not effect the functionality of your application in any way, but will provide you
 insight into the test coverage of security-relevant parts of your application. Once you have stabilized on a good
 policy for your application, PIE's violation log effectively acts as an intrusion detection system, allowing you to
