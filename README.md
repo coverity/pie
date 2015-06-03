@@ -185,6 +185,38 @@ generating policies for CSP, and includes an example (in the example-webapp dire
 Security to define role-based access rules on DAO methods. See the [advanced documentation](docs/ADVANCED.md) for
 details!
 
+Using PIE in Production and PIE as Intrusion-Detection
+------------------------------------------------------
+
+If you're considering using PIE in a production system, we recommend following the below workflow for your application.
+This workflow is based on the assumption that you already have a suite of integration / end-to-end tests, e.g.
+Selenium tests.
+
+1. Start the integration test server and enable PIE.
+2. Run the integration / end-to-end tests.
+3. Shutdown the integration server and review the auto-created policy, modifying as needed.
+4. Run PIE in report-only mode in as near of a production environment as you can.
+5. Observe violations in the PIE log. Most likely, any violations you see are the result of insufficient test case
+coverage rather than a sign of someone exploiting the application.
+6. Write new test cases that cover the violations or review violations to see if they're security exploits. Either
+manually update your policy or regenerate it by rerunning your test suite with these new tests. Repeat starting at
+step 4.
+
+In this workflow, we have never configured PIE to run in enforcement mode, and are just logging policy violations for
+manual review. As such, PIE will not effect the functionality of your application in any way, but will provide you
+insight into the test coverage of security-relevant parts of your application. Once you have stabilized on a good
+policy for your application, PIE's violation log effectively acts as an intrusion detection system, allowing you to
+keep a log unintended or unusual behavior.
+
+By default, PIE keeps policy violations in-memory to update the security policy and doesn't perform any logging of
+violations. To use PIE as described in steps 4 and 5, use the properties in your `pieConfig.properties` file similar to
+the following:
+
+    pie.regenerateOnShutdown = false # This means the policy is not automatically updated
+    pie.loggingEnabled = true # This will cause all violations to show up in PIE's log
+    pie.logPath = /var/log/tomcat/pie.log # The filesystem path for PIE to log to.
+    securityManager.isReportOnlyMode = true # The SecurityManager module will not enforce the policy
+
 License
 -------
 
